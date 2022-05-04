@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>이미지</h1>
+    <button>이미지 추가</button>
+    <form
+      id="image-form-view"
+      method="post"
+      action="/upload"
+      enctype="multipart/form-data"
+    >
+      <input
+        type="file"
+        id="file"
+        accept="image/*"
+        class="image__input"
+        name="file"
+      />
+      <input type="hidden" id="rest" name="rest" id="hidden" />
+      <button class="image__button">이미지 자르기</button>
+    </form>
+    <canvas id="canvas"></canvas>
+    <div>
+      <div id="division-view">
+        <p>분할값</p>
+        <div class="division__container">
+          <div class="division--increase item">증가</div>
+          <span class="division--text item">0</span>
+          <div class="division--decrease item">감소</div>
+        </div>
+      </div>
+      <button>텍스트 추출</button>
+    </div>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
