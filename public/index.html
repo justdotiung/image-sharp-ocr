@@ -8,22 +8,9 @@
     <title>Document</title>
   </head>
   <body>
-    <h1>이미지</h1>
-    <button>이미지 추가</button>
-    <form
-      id="image-form-view"
-      method="post"
-      action="/upload"
-      enctype="multipart/form-data"
-    >
-      <input
-        type="file"
-        id="file"
-        accept="image/*"
-        class="image__input"
-        name="file"
-      />
-      <input type="hidden" id="rest" name="rest" id="hidden" />
+    <h1>이미지 자르고 텍스트 넣고 지지고 볶고</h1>
+    <form id="image-form-view">
+      <input type="file" accept="image/*" class="image__input" />
       <button class="image__button">이미지 자르기</button>
     </form>
     <canvas id="canvas"></canvas>
@@ -36,6 +23,7 @@
           <div class="division--decrease item">감소</div>
         </div>
       </div>
+      <button>이미지 추가</button>
       <button>텍스트 추출</button>
     </div>
     <script src="./app.js" type="module"></script>

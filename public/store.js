@@ -19,6 +19,7 @@ const createStore = (reducer) => {
 const initState = {
   divistionCount: 1,
   imageRect: { x: 0, y: 0, width: 0, height: 0 },
+  offset: { left: 0, top: 0 },
   scale: 1,
 };
 
@@ -27,6 +28,8 @@ export const actiontype = {
   DECREASE: "DECREASE",
   SCALE: "SCALE",
   BORDER: "BORDER",
+  INITSTATE: "INITSTATE",
+  OFFSET: "OFFSET",
 };
 
 const reducer = (state = initState, action) => {
@@ -38,6 +41,10 @@ const reducer = (state = initState, action) => {
     return { ...state, scale: action.payload };
   } else if (action.type === actiontype.BORDER) {
     return { ...state, imageRect: action.payload };
+  } else if (action.type === actiontype.INITSTATE) {
+    return initState;
+  } else if (action.type === actiontype.OFFSET) {
+    return { ...state, offset: action.payload };
   }
 };
 

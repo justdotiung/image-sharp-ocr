@@ -15,6 +15,13 @@ class CanvasView {
     this.canvas.addEventListener("mousedown", (event) => {
       this.info.x = event.clientX;
       this.info.y = event.clientY;
+      store.dispatch({
+        type: actiontype.OFFSET,
+        payload: {
+          left: this.canvas.offsetLeft,
+          top: this.canvas.offsetTop,
+        },
+      });
       if (!this.img) return;
       this.canvas.addEventListener("mousemove", this.onMousemove);
       this.canvas.addEventListener("mouseup", this.onReset);
@@ -89,7 +96,6 @@ class CanvasView {
 
   onReset() {
     store.dispatch({ type: actiontype.BORDER, payload: this.info });
-    this.info = { x: 0, y: 0, width: 0, height: 0 };
     this.canvas.removeEventListener("mousemove", this.onMousemove);
     this.canvas.removeEventListener("mouseup", this.onReset);
     this.canvas.removeEventListener("mouseout", this.onReset);

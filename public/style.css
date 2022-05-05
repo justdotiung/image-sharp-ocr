@@ -1,7 +1,11 @@
-.division__wrapper {
+#division-view > p {
+  text-align: center;
+}
+.division__container {
   margin-bottom: 10px;
   display: flex;
   align-items: center;
+  justify-content: center;
   /* flex-direction: row; */
 }
 

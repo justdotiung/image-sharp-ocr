@@ -1,4 +1,4 @@
-import { store } from "../store.js";
+import { actiontype, store } from "../store.js";
 console.log("ImageFormView");
 
 class ImageFormView {
@@ -6,7 +6,7 @@ class ImageFormView {
     this.el = document.querySelector(id);
     this.input = this.el.querySelector(".image__input");
     this.button = this.el.querySelector(".image__button");
-    this.hidden = this.el.querySelector("#hidden");
+    this.hidden = this.el.querySelector("#rest");
     this.onThumbnail = this.onThumbnail.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
 
@@ -32,19 +32,29 @@ class ImageFormView {
   }
 
   onSubmit(e) {
-    // this.hidden.value = JSON.stringify(store.getState());
-    // const formdata = new FormData();
-    // formdata.append("image", this.input.files[0]);
-    // fetch("/upload", {
-    //   method: "POST",
-    //   data: formdata,
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     // 'Content-Type': 'application/x-www-form-urlencoded',
-    //   },
-    // })
-    //   .then((r) => r.json())
-    //   .then((r) => console.log(r));
+    e.preventDefault();
+    const { imageRect } = store.getState();
+    if (imageRect.width === 0) {
+      alert("영역을 먼저 지정해주세요.");
+      return;
+    }
+    const data = new FormData();
+    data.append("rest", JSON.stringify(store.getState()));
+    data.append("file", this.input.files[0]);
+
+    // var req = new XMLHttpRequest();
+    // req.open("POST", "/upload");
+    // req.send(data);
+
+    fetch("/upload", {
+      method: "POST",
+      body: data,
+    })
+      .then((r) => r.json())
+      .then((r) => {
+        console.log(r);
+        // store.dispatch({ type: actiontype.INITSTATE });
+      });
   }
 }
 
