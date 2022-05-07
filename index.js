@@ -28,6 +28,8 @@ if (!isdbData) {
   }
 }
 
+const SLICE_IMAGE_PATHS = [];
+
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const isDirectory = fs.existsSync(__dirname + "/images");
@@ -99,13 +101,13 @@ app.post("/upload", upload.single("file"), (req, res) => {
           .clone()
           .extract({
             left: dw * (i - 1),
-
             top: 0,
             width: dw,
             height: info.height,
           })
           .toFile(__dirname + `/images/slice${i}.png`)
-          .then(() => {
+          .then((_) => {
+            SLICE_IMAGE_PATHS.push(__dirname + `/images/slice${i}.png`);
             if (i === divistionCount - 1) {
               fs.unlinkSync(__dirname + "/images/" + filename);
               fs.unlinkSync(__dirname + "/images/" + req.file.filename);
@@ -114,7 +116,6 @@ app.post("/upload", upload.single("file"), (req, res) => {
           .catch((err) =>
             res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
           );
-        //
       }
     })
     .then(() => {
@@ -128,9 +129,49 @@ app.get("/", (req, res) => {
 });
 
 app.get("/extract", (req, res) => {
-  console.log(1234);
-  res.status(200).json({ message: "추출되었습니다." });
-  // res.status(200).json({data: })
+  const isDirectory = fs.existsSync(__dirname + "/datas/ocr");
+  if (!isDirectory) fs.mkdirSync(__dirname + "/datas/ocr", { recursive: true });
+  console.log(SLICE_IMAGE_PATHS);
+  (async () => {
+    /*
+    for await (const path of SLICE_IMAGE_PATHS) {
+
+      const client = new vision.ImageAnnotatorClient();
+      const t = { arr: [] };
+      const [result] = await client.textDetection(path);
+      const detections = result.textAnnotations;
+      console.log("Text:");
+      detections.forEach((text) => {
+        t.arr.push(text);
+        console.log("ing");
+      });
+      console.log("f");
+    }
+    fs.writeFile(__dirname + `/datas/ocr/text${i}.json`, JSON.stringify(t));
+    const idx = SLICE_IMAGE_PATHS.findIndex((_) => _ === path);
+    SLICE_IMAGE_PATHS.splice(idx, 1);
+    // */
+    const data = JSON.parse(
+      fs.readFileSync(__dirname + "/db/data.json", {
+        encoding: "utf8",
+        flag: "r",
+      })
+    );
+    console.log(data);
+    const newData = {
+      ...data,
+      mountAPIreqCount: data.mountAPIreqCount - SLICE_IMAGE_PATHS.length,
+    };
+
+    console.log(data.mountAPIreqCount - SLICE_IMAGE_PATHS.length);
+    console.log(data.mountAPIreqCount, SLICE_IMAGE_PATHS.length);
+    console.log(newData);
+    fs.writeFileSync(
+      __dirname + "/db/data.json",
+      JSON.stringify(newData, null, "  ")
+    );
+    res.status(200).json({ message: "추출되었습니다." });
+  })();
 });
 
 app.listen("8000", () => console.log("listen port 8000"));
