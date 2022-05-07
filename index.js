@@ -11,13 +11,17 @@ app.use(express.urlencoded({ extended: false }));
 
 // db폴더 생성
 const isDirectory = fs.existsSync(__dirname + "/db");
-if (!isDirectory) fs.mkdirSync(__dirname);
+if (!isDirectory) fs.mkdirSync(__dirname + "/db");
 const isdbData = fs.existsSync(__dirname + "/db/data.json");
 if (!isdbData) {
   try {
     fs.writeFileSync(
       __dirname + "/db/data.json",
-      JSON.stringify({ mountAPIreqCount: 1000 }, null, " ")
+      JSON.stringify(
+        { mountAPIreqCount: 1000, month: new Date().getMonth() },
+        null,
+        " "
+      )
     );
   } catch (e) {
     console.log(e);
@@ -26,11 +30,12 @@ if (!isdbData) {
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    const isDirectory = fs.existsSync(__dirname + "/images");
+    if (!isDirectory) fs.mkdirSync(__dirname + "/images");
     cb(null, "images/");
   },
   filename: function (req, file, cb) {
-    const ext = file.originalname.split(".").at(-1);
-    cb(null, "file." + ext);
+    cb(null, file.originalname);
   },
 });
 const upload = multer({ storage });
@@ -78,6 +83,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
   const width = parseInt(imageRect.width * scale);
   const height = parseInt(imageRect.height * scale);
 
+  const filename = Date.now() + req.file.originalname;
   sharp(__dirname + "/images/" + req.file.filename)
     .extract({
       left: x,
@@ -85,22 +91,35 @@ app.post("/upload", upload.single("file"), (req, res) => {
       width,
       height,
     })
-    .toFile(__dirname + "/images/output.png")
+    .toFile(__dirname + "/images/" + filename)
     .then((info) => {
       const dw = Math.floor(info.width / divistionCount);
       for (let i = 1; i <= divistionCount; i++) {
-        sharp(__dirname + "/images/output.png")
+        sharp(__dirname + "/images/" + filename)
+          .clone()
           .extract({
             left: dw * (i - 1),
+
             top: 0,
             width: dw,
             height: info.height,
           })
-          .toFile(__dirname + `/images/output${i}.png`)
-          .catch((err) => res.json({ message: err }));
+          .toFile(__dirname + `/images/slice${i}.png`)
+          .then(() => {
+            if (i === divistionCount - 1) {
+              fs.unlinkSync(__dirname + "/images/" + filename);
+              fs.unlinkSync(__dirname + "/images/" + req.file.filename);
+            }
+          })
+          .catch((err) =>
+            res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
+          );
+        //
       }
     })
-    .then(() => res.json({ message: "성공" }))
+    .then(() => {
+      return res.json({ message: "성공" });
+    })
     .catch((err) => res.json({ message: err }));
 });
 
@@ -108,8 +127,10 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-app.get("/api/count", (req, res) => {
-  res.status(200).json({data: })
-})
+app.get("/extract", (req, res) => {
+  console.log(1234);
+  res.status(200).json({ message: "추출되었습니다." });
+  // res.status(200).json({data: })
+});
 
 app.listen("8000", () => console.log("listen port 8000"));
