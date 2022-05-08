@@ -86,21 +86,6 @@ class CanvasView {
     this.onDrawRact(this.info);
   }
 
-  add() {
-    this.canvas.addEventListener("mousemove", this.onMousemove);
-    this.canvas.addEventListener("mouseup", this.onReset);
-    this.canvas.addEventListener("mouseout", this.onReset);
-  }
-
-  onDrawLine() {
-    this.ctx.strokeStyle = "blue";
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.beginPath();
-    this.onFillImage(this.img);
-    this.ctx.lineTo();
-    this.ctx.moveTo();
-    this.ctx.stroke();
-  }
   onDrawRact({ x, y, width, height }) {
     this.ctx.strokeStyle = "blue";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

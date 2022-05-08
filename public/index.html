@@ -14,6 +14,11 @@
       <input type="file" accept="image/*" class="image__input" />
       <button class="image__button">이미지 자르기</button>
     </form>
+    <div id="edit__container">
+      <button class="crop__button">이미지 편집</button>
+      <button class="line__button--add">선추가</button>
+      <button class="line__button--remove">선제거</button>
+    </div>
     <canvas id="canvas"></canvas>
     <div>
       <div id="division-view">
@@ -27,6 +32,7 @@
       <button class="button__text--extract">텍스트 추출</button>
       <button class="buuton__cor--convert">엑셀로 변경</button>
     </div>
+    <div class="convert__modal"></div>
     <script src="./app.js" type="module"></script>
   </body>
 </html>

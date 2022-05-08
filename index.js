@@ -77,7 +77,7 @@ const upload = multer({ storage });
 // });
 
 app.post("/upload", upload.single("file"), (req, res) => {
-  console.log(req.file);
+  // console.log(req.file);
   const { divistionCount, imageRect, scale, offset } = JSON.parse(
     req.body.rest
   );
@@ -88,7 +88,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
 
   const filename = Date.now() + req.file.originalname;
   sharp(__dirname + "/images/" + req.file.filename)
-    // .rotate()
+    .rotate(90)
     .extract({
       left: x,
       top: y,
@@ -119,7 +119,10 @@ app.post("/upload", upload.single("file"), (req, res) => {
             }
           })
           .catch(
-            (err) => console.log(err)
+            (err) => {
+              console.log("여기는 들어오나?");
+              console.log(err);
+            }
             //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
           );
       }
@@ -127,7 +130,10 @@ app.post("/upload", upload.single("file"), (req, res) => {
     .then(() => {
       return res.json({ message: "성공" });
     })
-    .catch((err) => res.json({ message: err }));
+    .catch((err) => {
+      console.log("여기서 잘못된다.");
+      return res.json({ message: err });
+    });
 });
 
 app.get("/", (req, res) => {
@@ -153,7 +159,7 @@ app.get("/extract", async (req, res) => {
 
   for (let i = 0; i < values.length; i++) {
     const [result] = values[i];
-    console.log(result);
+    // console.log(result);
     const t = { arr: [] };
     const { text } = result.fullTextAnnotation;
     writePromises.push(
@@ -201,12 +207,13 @@ app.get("/ocr", (req, res) => {
   res.json(data);
 });
 
-app.get("/xlsx", async (req, res) => {
+app.get("/xlsx", (req, res) => {
   if (!fs.existsSync(__dirname + "/datas/output"))
     fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
 
   const workbook = XLSX.utils.book_new();
   const datas = [];
+
   let i = 0;
   while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
     console.log(i);
@@ -214,8 +221,9 @@ app.get("/xlsx", async (req, res) => {
       encoding: "utf8",
       flag: "r",
     });
-    i++;
     datas.push(JSON.parse(data).text.split("\n"));
+    fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+    i++;
   }
 
   const lengths = datas.map((d) => d.length);
@@ -225,14 +233,12 @@ app.get("/xlsx", async (req, res) => {
   for (let i = 0; i < maxRow; i++) sheet.push([]);
 
   for (let i = 0; i < datas.length; i++) {
-    console.log(datas[i].length);
-    console.log(datas[i]);
     for (let j = 0; j < datas[i].length; j++) {
       sheet[j][i] = datas[i][j];
     }
   }
 
-  console.log(sheet);
+  // console.log(sheet);
 
   const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
 

@@ -19,6 +19,8 @@ class DicisionContainerView {
         this.setText(store.getState().divistionCount);
       }
     });
+
+    this.show(false);
   }
 
   show(b = true) {
