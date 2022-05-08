@@ -88,6 +88,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
 
   const filename = Date.now() + req.file.originalname;
   sharp(__dirname + "/images/" + req.file.filename)
+    // .rotate()
     .extract({
       left: x,
       top: y,
@@ -108,7 +109,10 @@ app.post("/upload", upload.single("file"), (req, res) => {
           })
           .toFile(__dirname + `/images/slice${i}.png`)
           .then((_) => {
-            SLICE_IMAGE_PATHS.push(__dirname + `/images/slice${i}.png`);
+            SLICE_IMAGE_PATHS.push({
+              path: __dirname + `/images/slice${i}.png`,
+              index: i,
+            });
             if (i === divistionCount) {
               fs.unlinkSync(__dirname + "/images/" + filename);
               fs.unlinkSync(__dirname + "/images/" + req.file.filename);
@@ -133,30 +137,38 @@ app.get("/", (req, res) => {
 app.get("/extract", async (req, res) => {
   if (!SLICE_IMAGE_PATHS.length)
     return res.json({ message: "먼저 이미지를 잘라주세요." });
-
   const isDirectory = fs.existsSync(__dirname + "/datas/ocr");
-  if (!isDirectory) fs.mkdirSync(__dirname + "/datas/ocr", { recursive: true });
-  /*
-  for (const path of SLICE_IMAGE_PATHS) {
-
-      const client = new vision.ImageAnnotatorClient();
-      const t = { arr: [] };
-      const [result] = await client.textDetection(path);
-      const detections = result.textAnnotations;
-      console.log("Text:");
-      detections.forEach((text) => {
-        t.arr.push(text);
-        console.log("ing");
-      });
-      console.log("f");
-    }
-    fs.writeFile(__dirname + `/datas/ocr/text${i}.json`, JSON.stringify(t));
-    await fs.promises.unlink(path);
-    // */
-
-  for (const path of SLICE_IMAGE_PATHS) {
-    await fs.promises.unlink(path);
+  if (!isDirectory) {
+    fs.mkdirSync(__dirname + "/datas/ocr", { recursive: true });
   }
+  const promises = [];
+  const writePromises = [];
+  const client = new vision.ImageAnnotatorClient();
+
+  for (const { path } of SLICE_IMAGE_PATHS) {
+    promises.push(client.textDetection(path));
+  }
+
+  const values = await Promise.all(promises);
+
+  for (let i = 0; i < values.length; i++) {
+    const [result] = values[i];
+    console.log(result);
+    const t = { arr: [] };
+    const { text } = result.fullTextAnnotation;
+    writePromises.push(
+      fs.promises.writeFile(
+        __dirname + `/datas/ocr/text_${i}.json`,
+        JSON.stringify({ text })
+      )
+    );
+  }
+
+  await Promise.all(writePromises).then(() => {
+    for (const { path } of SLICE_IMAGE_PATHS) {
+      fs.promises.unlink(path);
+    }
+  });
 
   const data = JSON.parse(
     fs.readFileSync(__dirname + "/db/data.json", {
@@ -190,29 +202,43 @@ app.get("/ocr", (req, res) => {
 });
 
 app.get("/xlsx", async (req, res) => {
-  const workbook = XLSX.utils.book_new();
-  // const rows = [
-  //   { name: "George Washington", birthday: "1732-02-22" },
-  //   { name: "John Adams", birthday: "1735-10-19" },
-  // ];
-  // const worksheet = XLSX.utils.json_to_sheet(rows);
+  if (!fs.existsSync(__dirname + "/datas/output"))
+    fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
 
-  var worksheet1 = XLSX.utils.aoa_to_sheet([
-    ["A1", "B1", "C1"],
-    ["A2", "B2", "C2"],
-    ["A3", "B3", "C3"],
-  ]);
+  const workbook = XLSX.utils.book_new();
+  const datas = [];
+  let i = 0;
+  while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+    console.log(i);
+    const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
+      encoding: "utf8",
+      flag: "r",
+    });
+    i++;
+    datas.push(JSON.parse(data).text.split("\n"));
+  }
+
+  const lengths = datas.map((d) => d.length);
+  const maxRow = Math.max(...lengths);
+
+  const sheet = [];
+  for (let i = 0; i < maxRow; i++) sheet.push([]);
+
+  for (let i = 0; i < datas.length; i++) {
+    console.log(datas[i].length);
+    console.log(datas[i]);
+    for (let j = 0; j < datas[i].length; j++) {
+      sheet[j][i] = datas[i][j];
+    }
+  }
+
+  console.log(sheet);
+
+  const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
 
   XLSX.utils.book_append_sheet(workbook, worksheet1, "date");
-  await fs.promises.unlink(__dirname + "/create.xlsx");
-  XLSX.writeFile(workbook, "create.xlsx");
+  XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
 
-  // const data = JSON.parse(
-  //   fs.readFileSync(__dirname + "/db/data.json", {
-  //     encoding: "utf8",
-  //     flag: "r",
-  //   })
-  // );
   res.json({ message: "성공" });
 });
 
