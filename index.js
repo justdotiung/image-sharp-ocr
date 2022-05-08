@@ -3,6 +3,7 @@ const vision = require("@google-cloud/vision");
 const fs = require("fs");
 const multer = require("multer");
 const sharp = require("sharp");
+const XLSX = require("xlsx");
 const app = express();
 
 app.use(express.static("public"));
@@ -94,10 +95,10 @@ app.post("/upload", upload.single("file"), (req, res) => {
       height,
     })
     .toFile(__dirname + "/images/" + filename)
-    .then((info) => {
+    .then(async (info) => {
       const dw = Math.floor(info.width / divistionCount);
       for (let i = 1; i <= divistionCount; i++) {
-        sharp(__dirname + "/images/" + filename)
+        await sharp(__dirname + "/images/" + filename)
           .clone()
           .extract({
             left: dw * (i - 1),
@@ -108,13 +109,14 @@ app.post("/upload", upload.single("file"), (req, res) => {
           .toFile(__dirname + `/images/slice${i}.png`)
           .then((_) => {
             SLICE_IMAGE_PATHS.push(__dirname + `/images/slice${i}.png`);
-            if (i === divistionCount - 1) {
+            if (i === divistionCount) {
               fs.unlinkSync(__dirname + "/images/" + filename);
               fs.unlinkSync(__dirname + "/images/" + req.file.filename);
             }
           })
-          .catch((err) =>
-            res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
+          .catch(
+            (err) => console.log(err)
+            //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
           );
       }
     })
@@ -128,13 +130,14 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-app.get("/extract", (req, res) => {
+app.get("/extract", async (req, res) => {
+  if (!SLICE_IMAGE_PATHS.length)
+    return res.json({ message: "먼저 이미지를 잘라주세요." });
+
   const isDirectory = fs.existsSync(__dirname + "/datas/ocr");
   if (!isDirectory) fs.mkdirSync(__dirname + "/datas/ocr", { recursive: true });
-  console.log(SLICE_IMAGE_PATHS);
-  (async () => {
-    /*
-    for await (const path of SLICE_IMAGE_PATHS) {
+  /*
+  for (const path of SLICE_IMAGE_PATHS) {
 
       const client = new vision.ImageAnnotatorClient();
       const t = { arr: [] };
@@ -148,30 +151,69 @@ app.get("/extract", (req, res) => {
       console.log("f");
     }
     fs.writeFile(__dirname + `/datas/ocr/text${i}.json`, JSON.stringify(t));
-    const idx = SLICE_IMAGE_PATHS.findIndex((_) => _ === path);
-    SLICE_IMAGE_PATHS.splice(idx, 1);
+    await fs.promises.unlink(path);
     // */
-    const data = JSON.parse(
-      fs.readFileSync(__dirname + "/db/data.json", {
-        encoding: "utf8",
-        flag: "r",
-      })
-    );
-    console.log(data);
-    const newData = {
-      ...data,
-      mountAPIreqCount: data.mountAPIreqCount - SLICE_IMAGE_PATHS.length,
-    };
 
-    console.log(data.mountAPIreqCount - SLICE_IMAGE_PATHS.length);
-    console.log(data.mountAPIreqCount, SLICE_IMAGE_PATHS.length);
-    console.log(newData);
-    fs.writeFileSync(
-      __dirname + "/db/data.json",
-      JSON.stringify(newData, null, "  ")
-    );
-    res.status(200).json({ message: "추출되었습니다." });
-  })();
+  for (const path of SLICE_IMAGE_PATHS) {
+    await fs.promises.unlink(path);
+  }
+
+  const data = JSON.parse(
+    fs.readFileSync(__dirname + "/db/data.json", {
+      encoding: "utf8",
+      flag: "r",
+    })
+  );
+  const newData = {
+    ...data,
+    mountAPIreqCount: data.mountAPIreqCount - SLICE_IMAGE_PATHS.length,
+  };
+  fs.writeFileSync(
+    __dirname + "/db/data.json",
+    JSON.stringify(newData, null, "  ")
+  );
+  SLICE_IMAGE_PATHS.splice(0, SLICE_IMAGE_PATHS.length);
+  res.status(200).json({
+    message: "추출되었습니다.",
+    mountAPIreqCount: newData.mountAPIreqCount,
+  });
+});
+
+app.get("/ocr", (req, res) => {
+  const data = JSON.parse(
+    fs.readFileSync(__dirname + "/db/data.json", {
+      encoding: "utf8",
+      flag: "r",
+    })
+  );
+  res.json(data);
+});
+
+app.get("/xlsx", async (req, res) => {
+  const workbook = XLSX.utils.book_new();
+  // const rows = [
+  //   { name: "George Washington", birthday: "1732-02-22" },
+  //   { name: "John Adams", birthday: "1735-10-19" },
+  // ];
+  // const worksheet = XLSX.utils.json_to_sheet(rows);
+
+  var worksheet1 = XLSX.utils.aoa_to_sheet([
+    ["A1", "B1", "C1"],
+    ["A2", "B2", "C2"],
+    ["A3", "B3", "C3"],
+  ]);
+
+  XLSX.utils.book_append_sheet(workbook, worksheet1, "date");
+  await fs.promises.unlink(__dirname + "/create.xlsx");
+  XLSX.writeFile(workbook, "create.xlsx");
+
+  // const data = JSON.parse(
+  //   fs.readFileSync(__dirname + "/db/data.json", {
+  //     encoding: "utf8",
+  //     flag: "r",
+  //   })
+  // );
+  res.json({ message: "성공" });
 });
 
 app.listen("8000", () => console.log("listen port 8000"));

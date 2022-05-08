@@ -21,6 +21,7 @@ const initState = {
   imageRect: { x: 0, y: 0, width: 0, height: 0 },
   offset: { left: 0, top: 0 },
   scale: 1,
+  apiCount: 0,
 };
 
 export const actiontype = {
@@ -30,6 +31,7 @@ export const actiontype = {
   BORDER: "BORDER",
   INITSTATE: "INITSTATE",
   OFFSET: "OFFSET",
+  APICALLCOUNT: "APICALLCOUNT",
 };
 
 const reducer = (state = initState, action) => {
@@ -45,6 +47,8 @@ const reducer = (state = initState, action) => {
     return initState;
   } else if (action.type === actiontype.OFFSET) {
     return { ...state, offset: action.payload };
+  } else if (action.type === actiontype.APICALLCOUNT) {
+    return { ...state, apiCount: action.payload };
   }
 };
 
