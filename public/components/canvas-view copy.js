@@ -1,8 +1,8 @@
 import { actiontype, store } from "../store.js";
 console.log("canvas");
 
-class CanvasView {
-  constructor(id, { width, height }, mode) {
+class CropCanvas {
+  constructor(id, { width, height }) {
     this.canvas = document.querySelector(id);
     this.canvas.width = width;
     this.canvas.height = height;
@@ -118,4 +118,4 @@ class CanvasView {
   }
 }
 
-export default CanvasView;
+export default CropCanvas;

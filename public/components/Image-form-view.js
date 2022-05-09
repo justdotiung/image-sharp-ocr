@@ -41,7 +41,7 @@ class ImageFormView {
     const data = new FormData();
     data.append("rest", JSON.stringify(store.getState()));
     data.append("file", this.input.files[0]);
-
+    console.log(data.get("file"));
     // var req = new XMLHttpRequest();
     // req.open("POST", "/upload");
     // req.send(data);

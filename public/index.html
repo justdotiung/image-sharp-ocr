@@ -12,14 +12,18 @@
     <span class="ocr--text"></span>
     <form id="image-form-view">
       <input type="file" accept="image/*" class="image__input" />
-      <button class="image__button">이미지 자르기</button>
+      <button class="image__button">이미지 편집</button>
     </form>
     <div id="edit__container">
-      <button class="crop__button">이미지 편집</button>
+      <button class="crop__button">이미지 자르기</button>
       <button class="line__button--add">선추가</button>
       <button class="line__button--remove">선제거</button>
+      <button class="move__button">박스이동</button>
     </div>
     <canvas id="canvas"></canvas>
+    <div>
+      <canvas id="crop__canvas"></canvas>
+    </div>
     <div>
       <div id="division-view">
         <p>분할값</p>

@@ -88,7 +88,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
 
   const filename = Date.now() + req.file.originalname;
   sharp(__dirname + "/images/" + req.file.filename)
-    .rotate(90)
+    // .rotate(90)
     .extract({
       left: x,
       top: y,
@@ -96,37 +96,37 @@ app.post("/upload", upload.single("file"), (req, res) => {
       height,
     })
     .toFile(__dirname + "/images/" + filename)
-    .then(async (info) => {
-      const dw = Math.floor(info.width / divistionCount);
-      for (let i = 1; i <= divistionCount; i++) {
-        await sharp(__dirname + "/images/" + filename)
-          .clone()
-          .extract({
-            left: dw * (i - 1),
-            top: 0,
-            width: dw,
-            height: info.height,
-          })
-          .toFile(__dirname + `/images/slice${i}.png`)
-          .then((_) => {
-            SLICE_IMAGE_PATHS.push({
-              path: __dirname + `/images/slice${i}.png`,
-              index: i,
-            });
-            if (i === divistionCount) {
-              fs.unlinkSync(__dirname + "/images/" + filename);
-              fs.unlinkSync(__dirname + "/images/" + req.file.filename);
-            }
-          })
-          .catch(
-            (err) => {
-              console.log("여기는 들어오나?");
-              console.log(err);
-            }
-            //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
-          );
-      }
-    })
+    // .then(async (info) => {
+    //   const dw = Math.floor(info.width / divistionCount);
+    //   for (let i = 1; i <= divistionCount; i++) {
+    //     await sharp(__dirname + "/images/" + filename)
+    //       .clone()
+    //       .extract({
+    //         left: dw * (i - 1),
+    //         top: 0,
+    //         width: dw,
+    //         height: info.height,
+    //       })
+    //       .toFile(__dirname + `/images/slice${i}.png`)
+    //       .then((_) => {
+    //         SLICE_IMAGE_PATHS.push({
+    //           path: __dirname + `/images/slice${i}.png`,
+    //           index: i,
+    //         });
+    //         if (i === divistionCount) {
+    //           fs.unlinkSync(__dirname + "/images/" + filename);
+    //           fs.unlinkSync(__dirname + "/images/" + req.file.filename);
+    //         }
+    //       })
+    //       .catch(
+    //         (err) => {
+    //           console.log("여기는 들어오나?");
+    //           console.log(err);
+    //         }
+    //         //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
+    //       );
+    //   }
+    // })
     .then(() => {
       return res.json({ message: "성공" });
     })

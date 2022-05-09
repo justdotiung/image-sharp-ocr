@@ -49,11 +49,11 @@
   align-items: center;
   justify-content: center;
 }
-
-#canvas1 {
-  width: 500px;
-  height: 500px;
-}
+/* 
+.canvas__container {
+  display: flex;
+  flex-direction: column;
+} */
 
 .dn {
   display: none;
