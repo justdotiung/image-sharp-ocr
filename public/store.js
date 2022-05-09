@@ -64,8 +64,10 @@ const reducer = (state = initState, action) => {
     const lines = [...state.lines, action.payload];
     return { ...state, lines };
   } else if (action.type === actiontype.LINEPOSITION) {
+    console.log(state.lines);
     const lines = state.lines.splice(0, state.lines.length - 1);
-    return { ...state, lines: [lines, action.payload] };
+    console.log(lines);
+    return { ...state, lines: [...lines, action.payload] };
   }
 };
 

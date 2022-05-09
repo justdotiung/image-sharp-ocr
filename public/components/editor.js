@@ -15,13 +15,14 @@ class Editor {
       canvasEditor.onFillImage();
     });
     this.add.addEventListener("click", () => {
-      store.dispatch({ type: actiontype.MODE, payload: "addLine" });
       const { offset, imageRect } = store.getState();
       const { x, y, width, height } = imageRect;
       store.dispatch({
         type: actiontype.ADDLINE,
-        payload: [x + width / 2, y - offset.top, y + height - offset.top],
+        payload: [x + width / 2, y - offset.top, y + height - offset.top, 0],
       });
+      store.dispatch({ type: actiontype.MODE, payload: "addLine" });
+      console.log("g");
       const { lines } = store.getState();
       const curr = lines[lines.length - 1];
       canvasEditor.drawLine(curr);

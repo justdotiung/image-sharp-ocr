@@ -66,10 +66,10 @@ imageFormView.on("@thumbnail", ({ detail }) => {
   var img = new Image();
   img.src = detail.value;
   img.onload = function () {
+    dicisionContainerView.show();
+    editor.show();
     canvasEditor.saveImage(img);
     cropCanvas.saveImage(img);
     cropCanvas.draw();
-    dicisionContainerView.show();
-    editor.show();
   };
 });

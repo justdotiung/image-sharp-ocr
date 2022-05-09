@@ -39,7 +39,12 @@ class CropCanvas {
   }
 
   addLine() {
-    const { offset, imageRect, scale: baseScale } = store.getState();
+    const { offset, imageRect, scale: baseScale, lines } = store.getState();
+    // console.log("c", lines);
+    const curr = lines[lines.length - 1];
+    const [w, t, b, cx] = curr;
+    // console.log("c", w, cx, imageRect.x, imageRect.width / 2);
+
     const width = imageRect.width * baseScale; // 보여질 x좌표
     const height = imageRect.height * baseScale; // y좌표
     const scaleX = imageRect.width / this.canvas.width; // 박스넓이
@@ -50,6 +55,10 @@ class CropCanvas {
     const scaleX2 = this.canvas.width / dw;
     const scaleY2 = this.canvas.height / dh;
     const minScale = Math.min(scaleX2, scaleY2);
+    let mid = (cx - imageRect.x) * minScale * maxScale;
+    if (cx === 0) mid = (dw * minScale) / 2;
+    if (mid < 0) mid = 0;
+    if (mid > dw * minScale) mid = dw * minScale;
     this.ctx.beginPath();
     this.ctx.strokeStyle = "red";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -64,8 +73,8 @@ class CropCanvas {
       dw * minScale,
       dh * minScale
     );
-    this.ctx.moveTo((dw * minScale) / 2, 0);
-    this.ctx.lineTo((dw * minScale) / 2, dh * minScale);
+    this.ctx.moveTo(mid, 0);
+    this.ctx.lineTo(mid, dh * minScale);
     this.ctx.stroke();
     this.ctx.closePath();
   }

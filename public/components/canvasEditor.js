@@ -127,18 +127,17 @@ class CanvasEditor {
   onLineMove(e) {
     const { lines, imageRect } = store.getState();
     const curr = lines[lines.length - 1];
-    const [x, ...rest] = curr;
+    const [x, t, b, cx] = curr;
 
     let newX = x + e.clientX - imageRect.x - imageRect.width / 2;
-    // console.log(newX, imageRect.x);
     if (newX < imageRect.x) newX = imageRect.x;
     if (newX > imageRect.x + imageRect.width)
       newX = imageRect.x + imageRect.width;
 
-    const newLine = [newX, ...rest];
+    const newLine = [x, t, b, e.clientX];
 
-    this.drawLine(newLine);
-    // store.dispatch({ type: actiontype.LINEPOSITION, payload: newLine });
+    this.drawLine([newX, t, b, cx]);
+    store.dispatch({ type: actiontype.LINEPOSITION, payload: newLine });
   }
 
   onMousemove(e) {
@@ -153,7 +152,7 @@ class CanvasEditor {
     this.onDrawRact(this.info);
   }
 
-  drawLine([w, t, b]) {
+  drawLine([w, t, b, cx]) {
     const { imageRect } = store.getState();
     this.onDrawRact(imageRect);
     this.ctx.beginPath();
