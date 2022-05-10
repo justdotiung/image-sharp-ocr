@@ -1,5 +1,4 @@
-import { actiontype, store } from "../store.js";
-console.log("cropcanvas");
+import { store } from "../store.js";
 class CropCanvas {
   constructor(id, scale) {
     this.canvas = document.querySelector(id);
@@ -9,21 +8,9 @@ class CropCanvas {
   }
   draw() {
     store.subscribe(() => {
-      const { mode, createBox } = store.getState();
-      if (!createBox && mode === "crop") {
-        this.drawLine();
-        // this.cropImage();
-      }
-      if (createBox && mode === "move") {
-        this.drawLine();
-      }
-      if (createBox && mode === "addLine") {
-        this.drawLine();
-      }
-      if (createBox && mode === "removeLine") {
-        this.drawLine();
-      }
-      return;
+      const { mode } = store.getState();
+      if (mode === "none") return;
+      this.drawLine();
     });
   }
 
@@ -63,71 +50,15 @@ class CropCanvas {
     for (let i = 0; i < lines.length; i++) {
       const [w, t, b, cx] = lines[i];
       let mid = (cx - imageRect.x) * minScale * maxScale;
-      // if (cx === 0) mid = (dw * minScale) / 2;
-      // if (mid < 0) mid = 0;
-      // if (mid > dw * minScale) mid = dw * minScale;
+      if (cx === 0) mid = (dw * minScale) / 2;
+      if (mid < 0) mid = 0;
+      if (mid > dw * minScale) mid = dw * minScale;
       this.ctx.moveTo(mid, 0);
       this.ctx.lineTo(mid, dh * minScale);
     }
     this.ctx.stroke();
     this.ctx.closePath();
   }
-
-  // moveImage() {
-  //   const { offset, imageRect, scale: baseScale } = store.getState();
-  //   const width = imageRect.width * baseScale; // 보여질 x좌표
-  //   const height = imageRect.height * baseScale; // y좌표
-  //   const scaleX = imageRect.width / this.canvas.width; // 박스넓이
-  //   const scaleY = imageRect.height / this.canvas.height; // 박스 높이
-  //   const maxScale = Math.max(scaleX, scaleY);
-  //   const dw = imageRect.width * maxScale;
-  //   const dh = imageRect.height * maxScale;
-  //   const scaleX2 = this.canvas.width / dw;
-  //   const scaleY2 = this.canvas.height / dh;
-  //   const minScale = Math.min(scaleX2, scaleY2);
-  //   this.ctx.beginPath();
-  //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  //   this.ctx.drawImage(
-  //     this.img,
-  //     (imageRect.x - offset.left) * baseScale,
-  //     (imageRect.y - offset.top) * baseScale,
-  //     width,
-  //     height,
-  //     0,
-  //     0,
-  //     dw * minScale,
-  //     dh * minScale
-  //   );
-  //   this.ctx.closePath();
-  // }
-
-  // cropImage() {
-  //   const { offset, imageRect, scale: baseScale } = store.getState();
-  //   const width = imageRect.width * baseScale; // 보여질 x좌표
-  //   const height = imageRect.height * baseScale; // y좌표
-  //   const scaleX = imageRect.width / this.canvas.width; // 박스넓이
-  //   const scaleY = imageRect.height / this.canvas.height; // 박스 높이
-  //   const maxScale = Math.max(scaleX, scaleY);
-  //   const dw = imageRect.width * maxScale;
-  //   const dh = imageRect.height * maxScale;
-  //   const scaleX2 = this.canvas.width / dw;
-  //   const scaleY2 = this.canvas.height / dh;
-  //   const minScale = Math.min(scaleX2, scaleY2);
-  //   this.ctx.beginPath();
-  //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  //   this.ctx.drawImage(
-  //     this.img,
-  //     (imageRect.x - offset.left) * baseScale,
-  //     (imageRect.y - offset.top) * baseScale,
-  //     width,
-  //     height,
-  //     0,
-  //     0,
-  //     dw * minScale,
-  //     dh * minScale
-  //   );
-  //   this.ctx.closePath();
-  // }
 }
 
 export default CropCanvas;

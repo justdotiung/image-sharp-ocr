@@ -1,5 +1,4 @@
 import { actiontype, store } from "../store.js";
-console.log("canvas");
 
 class CanvasEditor {
   constructor(id, scale) {
@@ -38,6 +37,10 @@ class CanvasEditor {
         return this.remove(event);
       case "move":
         return this.move();
+      case "resize":
+        return this.resize();
+      default:
+        throw Error("선택모드없음");
     }
   }
 
@@ -49,7 +52,7 @@ class CanvasEditor {
     const scaleY = img.height / this.canvas.height;
     const scale = Math.max(scaleX, scaleY);
     this.scale = scale;
-    store.dispatch({ type: actiontype.SCALE, payload: scale });
+    // store.dispatch({ type: actiontype.SCALE, payload: scale });
     this.onFillImage(this.img);
   }
 
@@ -76,6 +79,12 @@ class CanvasEditor {
     this.canvas.addEventListener("mousemove", this.onMousemove);
     this.canvas.addEventListener("mouseup", this.onupBoxRect);
   }
+
+  resize() {
+    this.canvas.addEventListener("mousemove", this.onMousemove);
+    this.canvas.addEventListener("mouseup", this.onupBoxRect);
+  }
+
   add() {
     this.canvas.addEventListener("mousemove", this.onLineMove);
     this.canvas.addEventListener("mouseup", this.onupLineMove);
@@ -121,33 +130,39 @@ class CanvasEditor {
   }
 
   onMousemove(e) {
+    const { lines } = store.getState();
     let width = e.clientX - this.info.x;
     let height = e.clientY - this.info.y;
-    if (Math.abs(width) < 10 || Math.abs(height) < 10) {
+    if (width < 10 || height < 10) {
       width = 10;
       height = 10;
     }
     this.info.width = width;
     this.info.height = height;
-    this.onDrawRact(this.info);
+    // this.onDrawRact(this.info);
+    this.drawLine([...lines]);
   }
 
   drawLine(lines) {
-    const { imageRect } = store.getState();
-    this.onDrawRact(imageRect);
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = "red";
+    // const { this.info } = store.getState();
+    // // const this.info = this.info;
+    this.onDrawRact(this.info);
+    this.ctx.strokeStyle = "blue";
     for (let i = 0; i < lines.length; i++) {
+      this.ctx.beginPath();
+      if (i === lines.length - 1) {
+        this.ctx.strokeStyle = "red";
+      }
       const [w, t, b, cx] = lines[i];
-      let newX = w + cx - imageRect.x - imageRect.width / 2;
-      // if (newX < imageRect.x) newX = imageRect.x;
-      // if (newX > imageRect.x + imageRect.width)
-      //   newX = imageRect.x + imageRect.width;
+      let newX = w + cx - this.info.x - this.info.width / 2;
+      if (newX < this.info.x) newX = this.info.x;
+      if (newX > this.info.x + this.info.width)
+        newX = this.info.x + this.info.width;
       this.ctx.moveTo(newX, t);
       this.ctx.lineTo(newX, b);
+      this.ctx.stroke();
+      this.ctx.closePath();
     }
-    this.ctx.stroke();
-    this.ctx.closePath();
   }
 
   onDrawRact({ x, y, width, height }) {
@@ -167,9 +182,12 @@ class CanvasEditor {
   }
 
   onupBoxRect() {
+    const { mode } = store.getState();
     store.dispatch({ type: actiontype.BORDER, payload: this.info });
-    store.dispatch({ type: actiontype.CREATBOX, payload: true });
-    store.dispatch({ type: actiontype.MODE, payload: "none" });
+    if (mode === "crop") {
+      store.dispatch({ type: actiontype.CREATBOX, payload: true });
+      store.dispatch({ type: actiontype.MODE, payload: "none" });
+    }
     this.canvas.removeEventListener("mousemove", this.onMousemove);
     this.canvas.removeEventListener("mouseup", this.onupBoxRect);
   }

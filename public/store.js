@@ -17,7 +17,6 @@ const createStore = (reducer) => {
 };
 
 const initState = {
-  divistionCount: 1,
   createBox: false,
   imageRect: { x: 0, y: 0, width: 0, height: 0 },
   offset: { left: 0, top: 0 },
@@ -28,8 +27,6 @@ const initState = {
 };
 
 export const actiontype = {
-  INCREASE: "INCREASE",
-  DECREASE: "DECREASE",
   SCALE: "SCALE",
   CREATBOX: "CREATBOX",
   BORDER: "BORDER",
@@ -43,11 +40,7 @@ export const actiontype = {
 };
 
 const reducer = (state = initState, action) => {
-  if (action.type === actiontype.INCREASE) {
-    return { ...state, divistionCount: state.divistionCount + 1 };
-  } else if (action.type === actiontype.DECREASE) {
-    return { ...state, divistionCount: state.divistionCount - 1 };
-  } else if (action.type === actiontype.SCALE) {
+  if (action.type === actiontype.SCALE) {
     return { ...state, scale: action.payload };
   } else if (action.type === actiontype.CREATBOX) {
     return { ...state, createBox: action.payload };

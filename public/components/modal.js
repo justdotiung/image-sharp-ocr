@@ -5,7 +5,6 @@ class ConvertModal {
   }
 
   show(b) {
-    console.log(b);
     this.el.style.display = b ? "block" : "none";
   }
 }

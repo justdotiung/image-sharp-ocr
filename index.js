@@ -43,134 +43,81 @@ var storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// fs.appendFile("test.json", JSON.stringify(a));
-// fs.appendFile("test.json", JSON.stringify({ a: 1 }));
-
-// app.get("/", (req, res) => {
-//   // res.status
-
-//   // fs.writeFileSync("test.txt", "한글ddfsgksdf");
-//   (async () => {
-//     // Creates a client
-//     const client = new vision.ImageAnnotatorClient();
-
-//     /**
-//      * TODO(developer): Uncomment the following line before running the sample.
-//      */
-//     // const fileName = 'Local image file, e.g. /path/to/image.png';
-
-//     // Performs text detection on the local file
-//     const t = { arr: [] };
-//     const [result] = await client.textDetection("df.jpg");
-//     const detections = result.textAnnotations;
-//     console.log("Text:");
-//     detections.forEach((text, i) => {
-//       t.arr.push(text);
-//       console.log("ing");
-//       fs.writeFile(`tes1t${i}.json`, JSON.stringify(text, null, "  "));
-//     });
-//     console.log("f");
-//     // fs.appendFile("testt.json", JSON.stringify(t));
-//     fs.writeFile("tt.json", JSON.stringify(t));
-//     res.status(200).json(t);
-//   })();
-// });
-
 app.post("/upload", upload.single("file"), (req, res) => {
-  // console.log(req.file);
-  const { divistionCount, imageRect, scale, offset, lines } = JSON.parse(
-    req.body.rest
-  );
+  const { imageRect, scale, offset, lines } = JSON.parse(req.body.rest);
   const x = parseInt((imageRect.x - offset.left) * scale);
   const y = parseInt((imageRect.y - offset.top) * scale);
   const width = parseInt(imageRect.width * scale);
   const height = parseInt(imageRect.height * scale);
-
   const filename = Date.now() + req.file.originalname;
-  sharp(__dirname + "/images/" + req.file.filename)
-    // .rotate(90)
-    .extract({
-      left: x,
-      top: y,
-      width,
-      height,
-    })
-    .toFile(__dirname + "/images/" + filename)
-    .then(async (info) => {
-      const innerscale = width / imageRect.width;
-      let start = 0;
-      let sum = 0;
-      let px = 0;
-      for (let i = 0; i <= lines.length; i++) {
-        if (i < lines.length) {
-          const [w, t, b, cx] = lines[i];
-          px = parseInt((cx - imageRect.x) * innerscale) - start;
-          console.log(parseInt((cx - imageRect.x) * innerscale));
-        } else {
-          start = sum;
-          px = info.width - sum;
+
+  lines.sort((a, b) => a[3] - b[3]);
+
+  const image = sharp(__dirname + "/images/" + req.file.filename);
+  image.metadata().then(async (metadata) => {
+    let img = image;
+    if (metadata.width < metadata.height) {
+      img = image.rotate();
+    }
+    return image
+      .extract({
+        left: x,
+        top: y,
+        width,
+        height,
+      })
+      .toFile(__dirname + "/images/" + filename)
+      .then(async (info) => {
+        const innerscale = width / imageRect.width;
+        let start = 0;
+        let sum = 0;
+        let px = 0;
+
+        for (let i = 0; i <= lines.length; i++) {
+          if (i < lines.length) {
+            const [w, t, b, cx] = lines[i];
+            px = parseInt((cx - imageRect.x) * innerscale) - start;
+          } else {
+            start = sum;
+            px = info.width - sum;
+          }
+          await sharp(__dirname + "/images/" + filename)
+            .clone()
+            .extract({
+              left: start,
+              top: 0,
+              width: px,
+              height: info.height,
+            })
+            .resize({
+              width: px + 30,
+              height: info.height + 40,
+              fit: "fill",
+            })
+            .toFile(__dirname + `/images/slice${i}.png`)
+            .then((_) => {
+              SLICE_IMAGE_PATHS.push({
+                path: __dirname + `/images/slice${i}.png`,
+                index: i,
+              });
+              if (i === lines.length) {
+                fs.unlinkSync(__dirname + "/images/" + filename);
+                fs.unlinkSync(__dirname + "/images/" + req.file.filename);
+              }
+            })
+            .catch((e) => console.log(e));
+          start = px + start;
+          sum += px;
         }
-        console.log(start, px, info.width, i);
-        await sharp(__dirname + "/images/" + filename)
-          .clone()
-          .extract({
-            left: start,
-            top: 0,
-            width: px,
-            height: info.height,
-          })
-          .toFile(__dirname + `/images/slice${i}.png`)
-          .then((_) => {
-            SLICE_IMAGE_PATHS.push({
-              path: __dirname + `/images/slice${i}.png`,
-              index: i,
-            });
-            if (i === divistionCount) {
-              // fs.unlinkSync(__dirname + "/images/" + filename);
-              // fs.unlinkSync(__dirname + "/images/" + req.file.filename);
-            }
-          })
-          .catch((e) => console.log(e));
-        start = px;
-        sum += px;
-      }
-      // const dw = Math.floor(info.width / divistionCount);
-      // for (let i = 1; i <= divistionCount; i++) {
-      //   await sharp(__dirname + "/images/" + filename)
-      //     .clone()
-      //     .extract({
-      //       left: dw * (i - 1),
-      //       top: 0,
-      //       width: dw,
-      //       height: info.height,
-      //     })
-      //     .toFile(__dirname + `/images/slice${i}.png`)
-      //     .then((_) => {
-      //       SLICE_IMAGE_PATHS.push({
-      //         path: __dirname + `/images/slice${i}.png`,
-      //         index: i,
-      //       });
-      //       if (i === divistionCount) {
-      //         fs.unlinkSync(__dirname + "/images/" + filename);
-      //         fs.unlinkSync(__dirname + "/images/" + req.file.filename);
-      //       }
-      //     })
-      //     .catch(
-      //       (err) => {
-      //         console.log("여기는 들어오나?");
-      //         console.log(err);
-      //       }
-      //       //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
-      //     );
-      // }
-    })
-    .then(() => {
-      return res.json({ message: "성공" });
-    })
-    .catch((err) => {
-      console.log("여기서 잘못된다.");
-      return res.json({ message: err });
-    });
+      })
+      .then(() => {
+        return res.json({ message: "성공" });
+      })
+      .catch((err) => {
+        console.log("여기서 잘못된다.");
+        return res.json({ message: err });
+      });
+  });
 });
 
 app.get("/", (req, res) => {
@@ -196,7 +143,6 @@ app.get("/extract", async (req, res) => {
 
   for (let i = 0; i < values.length; i++) {
     const [result] = values[i];
-    // console.log(result);
     const t = { arr: [] };
     const { text } = result.fullTextAnnotation;
     writePromises.push(
@@ -241,6 +187,16 @@ app.get("/ocr", (req, res) => {
       flag: "r",
     })
   );
+  if (data.month !== new Date().getMonth()) {
+    fs.writeFileSync(
+      __dirname + "/db/data.json",
+      JSON.stringify(
+        { mountAPIreqCount: 1000, month: new Date().getMonth() },
+        null,
+        " "
+      )
+    );
+  }
   res.json(data);
 });
 
@@ -248,18 +204,16 @@ app.get("/xlsx", (req, res) => {
   if (!fs.existsSync(__dirname + "/datas/output"))
     fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
 
-  const workbook = XLSX.utils.book_new();
   const datas = [];
 
   let i = 0;
   while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
-    console.log(i);
     const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
       encoding: "utf8",
       flag: "r",
     });
     datas.push(JSON.parse(data).text.split("\n"));
-    fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+    // fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
     i++;
   }
 
@@ -271,16 +225,34 @@ app.get("/xlsx", (req, res) => {
 
   for (let i = 0; i < datas.length; i++) {
     for (let j = 0; j < datas[i].length; j++) {
-      sheet[j][i] = datas[i][j];
+      sheet[j][i] = datas[i][j].replace(/\d/g, "").trim();
     }
   }
 
   // console.log(sheet);
+  try {
+    let workbook = XLSX.utils.book_new();
+    if (fs.existsSync(__dirname + "/datas/output/create.xlsx")) {
+      workbook = XLSX.readFile(__dirname + "/datas/output/create.xlsx");
+    }
+    const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
 
-  const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet1,
+      "이름" + new Date().getTime()
+    );
+    XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
 
-  XLSX.utils.book_append_sheet(workbook, worksheet1, "date");
-  XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
+    let i = 0;
+    while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+      fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+      i++;
+    }
+  } catch (e) {
+    console.log(e);
+    return res.json({ message: "엑셀파일이 열려있는지 확인하세요." });
+  }
 
   res.json({ message: "성공" });
 });
