@@ -22,6 +22,35 @@ import CropCanvas from "./components/cropCanvas.js";
     });
 })();
 
+export const imageRender = (() => {
+  let isRender = false;
+  let ids = 0;
+
+  return {
+    async render() {
+      const { isUpload } = store.getState();
+      if (isRender) return;
+      if (isUpload) {
+        let text = "";
+        for (let i = 0; i < ids; i++) {
+          text += `<img src="/image/${i}" alt="image" />`;
+        }
+        const div = document.querySelector("#image-view");
+        div.innerHTML = text;
+        isRender = true;
+      }
+    },
+    reset() {
+      isRender = false;
+    },
+    setIds(n) {
+      ids = n;
+    },
+  };
+})();
+
+store.subscribe(imageRender.render);
+
 const imageFormView = new ImageForm("#image-form-view");
 const canvasEditor = new CanvasEditor("#canvas", 0.5);
 const convertModal = new ConvertModal();

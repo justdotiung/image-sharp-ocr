@@ -1,4 +1,5 @@
-import { store } from "../store.js";
+import { imageRender } from "../app.js";
+import { actiontype, store } from "../store.js";
 
 class ImageForm {
   constructor(id) {
@@ -51,7 +52,13 @@ class ImageForm {
       .then((r) => r.json())
       .then((r) => {
         alert(r.message);
-        // store.dispatch({ type: actiontype.INITSTATE });
+        console.log(r);
+
+        if (r.message === "success") {
+          imageRender.setIds(r.length);
+          imageRender.reset();
+          store.dispatch({ type: actiontype.UPLOAD, payload: true });
+        }
       });
   }
 }

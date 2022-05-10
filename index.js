@@ -7,6 +7,7 @@ const XLSX = require("xlsx");
 const app = express();
 
 app.use(express.static("public"));
+app.use(express.static("images"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -44,6 +45,13 @@ var storage = multer.diskStorage({
 const upload = multer({ storage });
 
 app.post("/upload", upload.single("file"), (req, res) => {
+  let i = 0;
+  while (fs.existsSync(__dirname + `/images/slice${i}.png`)) {
+    fs.unlinkSync(__dirname + `/images/slice${i}.png`);
+    i++;
+  }
+  SLICE_IMAGE_PATHS.splice(0, SLICE_IMAGE_PATHS.length);
+
   const { imageRect, scale, offset, lines } = JSON.parse(req.body.rest);
   const x = parseInt((imageRect.x - offset.left) * scale);
   const y = parseInt((imageRect.y - offset.top) * scale);
@@ -111,17 +119,31 @@ app.post("/upload", upload.single("file"), (req, res) => {
         }
       })
       .then(() => {
-        return res.json({ message: "성공" });
+        return res.json({
+          message: "success",
+          length: SLICE_IMAGE_PATHS.length,
+        });
       })
       .catch((err) => {
         console.log("여기서 잘못된다.");
-        return res.json({ message: err });
+        return res.json({ message: "err" });
       });
   });
 });
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
+});
+
+app.get("/image/:id", (req, res) => {
+  const { id } = req.params;
+  const data = fs.readFileSync(SLICE_IMAGE_PATHS[id].path);
+  res.writeHead(200, {
+    "Content-Type": "image/jpg",
+    "Cache-Control": "no-store",
+  });
+  res.write(data);
+  res.end();
 });
 
 app.get("/extract", async (req, res) => {
@@ -153,11 +175,7 @@ app.get("/extract", async (req, res) => {
     );
   }
 
-  await Promise.all(writePromises).then(() => {
-    for (const { path } of SLICE_IMAGE_PATHS) {
-      fs.promises.unlink(path);
-    }
-  });
+  await Promise.all(writePromises);
 
   const data = JSON.parse(
     fs.readFileSync(__dirname + "/db/data.json", {

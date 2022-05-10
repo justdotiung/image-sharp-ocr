@@ -24,6 +24,7 @@ const initState = {
   apiCount: 0,
   mode: "none",
   lines: [],
+  isUpload: false,
 };
 
 export const actiontype = {
@@ -37,6 +38,7 @@ export const actiontype = {
   ADDLINE: "ADDLINE",
   REMOVELINE: "REMOVELINE",
   LINEPOSITION: "LINEPOSITION",
+  UPLOAD: "UPLOAD",
 };
 
 const reducer = (state = initState, action) => {
@@ -64,6 +66,8 @@ const reducer = (state = initState, action) => {
     state.lines.pop();
     const lines = [...state.lines];
     return { ...state, lines };
+  } else if (action.type === actiontype.UPLOAD) {
+    return { ...state, isUpload: action.payload };
   }
 };
 
