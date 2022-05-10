@@ -9,7 +9,6 @@ class DicisionContainerView {
     this.el.addEventListener("click", (e) => {
       if (e.target.classList.contains("division--increase")) {
         store.dispatch({ type: actiontype.INCREASE });
-        console.log(store.getState());
         this.setText(store.getState().divistionCount);
       }
 
@@ -28,7 +27,6 @@ class DicisionContainerView {
   }
 
   setText(text) {
-    console.log(text);
     this.text.textContent = text;
   }
 }

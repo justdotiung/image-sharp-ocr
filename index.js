@@ -78,7 +78,7 @@ const upload = multer({ storage });
 
 app.post("/upload", upload.single("file"), (req, res) => {
   // console.log(req.file);
-  const { divistionCount, imageRect, scale, offset } = JSON.parse(
+  const { divistionCount, imageRect, scale, offset, lines } = JSON.parse(
     req.body.rest
   );
   const x = parseInt((imageRect.x - offset.left) * scale);
@@ -96,37 +96,74 @@ app.post("/upload", upload.single("file"), (req, res) => {
       height,
     })
     .toFile(__dirname + "/images/" + filename)
-    // .then(async (info) => {
-    //   const dw = Math.floor(info.width / divistionCount);
-    //   for (let i = 1; i <= divistionCount; i++) {
-    //     await sharp(__dirname + "/images/" + filename)
-    //       .clone()
-    //       .extract({
-    //         left: dw * (i - 1),
-    //         top: 0,
-    //         width: dw,
-    //         height: info.height,
-    //       })
-    //       .toFile(__dirname + `/images/slice${i}.png`)
-    //       .then((_) => {
-    //         SLICE_IMAGE_PATHS.push({
-    //           path: __dirname + `/images/slice${i}.png`,
-    //           index: i,
-    //         });
-    //         if (i === divistionCount) {
-    //           fs.unlinkSync(__dirname + "/images/" + filename);
-    //           fs.unlinkSync(__dirname + "/images/" + req.file.filename);
-    //         }
-    //       })
-    //       .catch(
-    //         (err) => {
-    //           console.log("여기는 들어오나?");
-    //           console.log(err);
-    //         }
-    //         //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
-    //       );
-    //   }
-    // })
+    .then(async (info) => {
+      const innerscale = width / imageRect.width;
+      let start = 0;
+      let sum = 0;
+      let px = 0;
+      for (let i = 0; i <= lines.length; i++) {
+        if (i < lines.length) {
+          const [w, t, b, cx] = lines[i];
+          px = parseInt((cx - imageRect.x) * innerscale) - start;
+          console.log(parseInt((cx - imageRect.x) * innerscale));
+        } else {
+          start = sum;
+          px = info.width - sum;
+        }
+        console.log(start, px, info.width, i);
+        await sharp(__dirname + "/images/" + filename)
+          .clone()
+          .extract({
+            left: start,
+            top: 0,
+            width: px,
+            height: info.height,
+          })
+          .toFile(__dirname + `/images/slice${i}.png`)
+          .then((_) => {
+            SLICE_IMAGE_PATHS.push({
+              path: __dirname + `/images/slice${i}.png`,
+              index: i,
+            });
+            if (i === divistionCount) {
+              // fs.unlinkSync(__dirname + "/images/" + filename);
+              // fs.unlinkSync(__dirname + "/images/" + req.file.filename);
+            }
+          })
+          .catch((e) => console.log(e));
+        start = px;
+        sum += px;
+      }
+      // const dw = Math.floor(info.width / divistionCount);
+      // for (let i = 1; i <= divistionCount; i++) {
+      //   await sharp(__dirname + "/images/" + filename)
+      //     .clone()
+      //     .extract({
+      //       left: dw * (i - 1),
+      //       top: 0,
+      //       width: dw,
+      //       height: info.height,
+      //     })
+      //     .toFile(__dirname + `/images/slice${i}.png`)
+      //     .then((_) => {
+      //       SLICE_IMAGE_PATHS.push({
+      //         path: __dirname + `/images/slice${i}.png`,
+      //         index: i,
+      //       });
+      //       if (i === divistionCount) {
+      //         fs.unlinkSync(__dirname + "/images/" + filename);
+      //         fs.unlinkSync(__dirname + "/images/" + req.file.filename);
+      //       }
+      //     })
+      //     .catch(
+      //       (err) => {
+      //         console.log("여기는 들어오나?");
+      //         console.log(err);
+      //       }
+      //       //  res.json({ message: "이미지의 가로세로 확인이 필요합니다." })
+      //     );
+      // }
+    })
     .then(() => {
       return res.json({ message: "성공" });
     })

@@ -18,7 +18,6 @@ class CanvasEditor {
 
     this.canvas.addEventListener("mousedown", (event) => {
       const { mode } = store.getState();
-      // console.log(mode, createBox);
       this.setMode(mode, event);
     });
   }
@@ -42,26 +41,6 @@ class CanvasEditor {
     }
   }
 
-  // saveImage(img) {
-  //   this.img = img;
-  //   const scaleX = img.width / this.canvas.width;
-  //   const scaleY = img.height / this.canvas.height;
-  //   const scale = Math.max(scaleX, scaleY);
-  //   this.scale = scale;
-  //   store.dispatch({ type: actiontype.SCALE, payload: scale });
-  //   this.onFillImage(this.img);
-  // }
-
-  // onFillImage(img = this.img) {
-  //   this.ctx.drawImage(
-  //     img,
-  //     0,
-  //     0,
-  //     img.width / this.scale,
-  //     img.height / this.scale
-  //   );
-  // }
-
   saveImage(img) {
     this.img = img;
     this.canvas.width = img.width * this.baseScale;
@@ -70,7 +49,6 @@ class CanvasEditor {
     const scaleY = img.height / this.canvas.height;
     const scale = Math.max(scaleX, scaleY);
     this.scale = scale;
-    console.log(scaleX, scaleY);
     store.dispatch({ type: actiontype.SCALE, payload: scale });
     this.onFillImage(this.img);
   }
@@ -108,36 +86,38 @@ class CanvasEditor {
     this.canvas.addEventListener("mouseup", this.onupBoxMove);
   }
   onBoxMove(e) {
-    const { offset, imageRect } = store.getState();
-
-    this.info.x = e.clientX - imageRect.width / 2;
-    this.info.y = e.clientY - imageRect.height / 2;
+    const { offset, imageRect, lines } = store.getState();
+    const { x, y, width, height } = imageRect;
+    this.info.x = e.clientX - width / 2;
+    this.info.y = e.clientY - height / 2;
 
     if (this.info.x < offset.left) this.info.x = offset.left;
-    if (this.info.x + imageRect.width - offset.left > this.canvas.width)
-      this.info.x = this.canvas.width + offset.left - imageRect.width;
+    if (this.info.x + width - offset.left > this.canvas.width)
+      this.info.x = this.canvas.width + offset.left - width;
     if (this.info.y < offset.top) this.info.y = off.top;
-    if (this.info.y - offset.top + imageRect.height > this.canvas.height) {
-      this.info.y = this.canvas.height + offset.top - imageRect.height;
+    if (this.info.y - offset.top + height > this.canvas.height) {
+      this.info.y = this.canvas.height + offset.top - height;
     }
+
+    for (let i = 0; i < lines.length; i++) {
+      lines[i][0] = x + width / 2;
+      lines[i][1] = y - offset.top;
+      lines[i][2] = y + height - offset.top;
+    }
+    store.dispatch({ type: actiontype.LINEPOSITION, payload: lines });
     store.dispatch({ type: actiontype.BORDER, payload: this.info });
-    this.onDrawRact(this.info);
+    // this.onDrawRact(this.info);
+    this.drawLine(lines);
   }
 
   onLineMove(e) {
-    const { lines, imageRect } = store.getState();
+    const { lines } = store.getState();
     const curr = lines[lines.length - 1];
-    const [x, t, b, cx] = curr;
-
-    let newX = x + e.clientX - imageRect.x - imageRect.width / 2;
-    if (newX < imageRect.x) newX = imageRect.x;
-    if (newX > imageRect.x + imageRect.width)
-      newX = imageRect.x + imageRect.width;
-
-    const newLine = [x, t, b, e.clientX];
-
-    this.drawLine([newX, t, b, cx]);
-    store.dispatch({ type: actiontype.LINEPOSITION, payload: newLine });
+    curr.splice(3, 1, e.clientX);
+    const newLine = [...curr];
+    lines.splice(lines.length - 1, 1, newLine);
+    this.drawLine([...lines]);
+    store.dispatch({ type: actiontype.LINEPOSITION, payload: lines });
   }
 
   onMousemove(e) {
@@ -152,13 +132,20 @@ class CanvasEditor {
     this.onDrawRact(this.info);
   }
 
-  drawLine([w, t, b, cx]) {
+  drawLine(lines) {
     const { imageRect } = store.getState();
     this.onDrawRact(imageRect);
     this.ctx.beginPath();
     this.ctx.strokeStyle = "red";
-    this.ctx.moveTo(w, t);
-    this.ctx.lineTo(w, b);
+    for (let i = 0; i < lines.length; i++) {
+      const [w, t, b, cx] = lines[i];
+      let newX = w + cx - imageRect.x - imageRect.width / 2;
+      // if (newX < imageRect.x) newX = imageRect.x;
+      // if (newX > imageRect.x + imageRect.width)
+      //   newX = imageRect.x + imageRect.width;
+      this.ctx.moveTo(newX, t);
+      this.ctx.lineTo(newX, b);
+    }
     this.ctx.stroke();
     this.ctx.closePath();
   }

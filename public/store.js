@@ -38,6 +38,7 @@ export const actiontype = {
   APICALLCOUNT: "APICALLCOUNT",
   MODE: "MODE",
   ADDLINE: "ADDLINE",
+  REMOVELINE: "REMOVELINE",
   LINEPOSITION: "LINEPOSITION",
 };
 
@@ -64,10 +65,12 @@ const reducer = (state = initState, action) => {
     const lines = [...state.lines, action.payload];
     return { ...state, lines };
   } else if (action.type === actiontype.LINEPOSITION) {
-    console.log(state.lines);
-    const lines = state.lines.splice(0, state.lines.length - 1);
-    console.log(lines);
-    return { ...state, lines: [...lines, action.payload] };
+    const lines = action.payload;
+    return { ...state, lines };
+  } else if (action.type === actiontype.REMOVELINE) {
+    state.lines.pop();
+    const lines = [...state.lines];
+    return { ...state, lines };
   }
 };
 

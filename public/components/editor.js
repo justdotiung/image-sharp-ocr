@@ -9,6 +9,7 @@ class Editor {
     this.remove = this.el.querySelector(".line__button--remove");
     this.move = this.el.querySelector(".move__button");
     this.crop.addEventListener("click", () => {
+      // store.dispatch({ type: actiontype.INITSTATE });
       store.dispatch({ type: actiontype.MODE, payload: "crop" });
       store.dispatch({ type: actiontype.CREATBOX, payload: false });
       canvasEditor.clear();
@@ -19,16 +20,23 @@ class Editor {
       const { x, y, width, height } = imageRect;
       store.dispatch({
         type: actiontype.ADDLINE,
-        payload: [x + width / 2, y - offset.top, y + height - offset.top, 0],
+        payload: [
+          x + width / 2,
+          y - offset.top,
+          y + height - offset.top,
+          x + width / 2,
+        ],
       });
       store.dispatch({ type: actiontype.MODE, payload: "addLine" });
-      console.log("g");
       const { lines } = store.getState();
-      const curr = lines[lines.length - 1];
-      canvasEditor.drawLine(curr);
+      // const curr = lines[lines.length - 1];
+      canvasEditor.drawLine(lines);
     });
     this.remove.addEventListener("click", () => {
       store.dispatch({ type: actiontype.MODE, payload: "removeLine" });
+      store.dispatch({ type: actiontype.REMOVELINE });
+      const { lines } = store.getState();
+      canvasEditor.drawLine(lines);
     });
 
     this.move.addEventListener("click", () => {
