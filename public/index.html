@@ -9,27 +9,35 @@
   </head>
   <body>
     <h1>이미지 자르고 텍스트 넣고 지지고 볶고</h1>
-    <span class="ocr--text"></span>
-    <form id="image-form-view">
-      <input type="file" accept="image/*" class="image__input" />
-      <button class="image__button">이미지 편집</button>
-    </form>
-    <div id="edit__container">
-      <button class="crop__button">이미지 자르기</button>
-      <button class="resize__button">사이즈변경</button>
-      <button class="line__button--add">선추가</button>
-      <button class="line__button--remove">선제거</button>
-      <button class="move__button">박스이동</button>
+    <div class="image__editer">
+      <div class="editer__container">
+        <div class="image__text">
+          <span class="ocr--text"></span>
+        </div>
+        <div class="edit__controller">
+          <form id="image-form-view">
+            <input type="file" accept="image/*" class="image__input" />
+            <button class="image__button">이미지 편집</button>
+          </form>
+          <div id="edit__button">
+            <button class="crop__button">이미지 자르기</button>
+            <button class="resize__button">사이즈변경</button>
+            <button class="line__button--add">선추가</button>
+            <button class="line__button--remove">선제거</button>
+            <button class="move__button">박스이동</button>
+          </div>
+        </div>
+      </div>
+      <canvas id="canvas"></canvas>
     </div>
-    <canvas id="canvas"></canvas>
+    <canvas id="crop__canvas"></canvas>
     <div>
-      <canvas id="crop__canvas"></canvas>
+      <div id="image-view"></div>
     </div>
     <div>
       <button class="button__text--extract">텍스트 추출</button>
       <button class="buuton__cor--convert">엑셀로 변경</button>
     </div>
-    <div id="image-view"></div>
     <div class="convert__modal"></div>
     <script src="./app.js" type="module"></script>
   </body>

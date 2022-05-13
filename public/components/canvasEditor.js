@@ -52,7 +52,6 @@ class CanvasEditor {
     const scaleY = img.height / this.canvas.height;
     const scale = Math.max(scaleX, scaleY);
     this.scale = scale;
-    // store.dispatch({ type: actiontype.SCALE, payload: scale });
     this.onFillImage(this.img);
   }
 
@@ -69,13 +68,18 @@ class CanvasEditor {
   crop(event) {
     this.info.x = event.clientX;
     this.info.y = event.clientY;
+
+    //TODO:  offset 거리구하기
+    this.parentLeft = this.canvas.offsetParent.offsetLeft;
+
     store.dispatch({
       type: actiontype.OFFSET,
       payload: {
-        left: this.canvas.offsetLeft,
-        top: this.canvas.offsetTop,
+        left: this.canvas.offsetLeft + this.canvas.offsetParent.offsetLeft,
+        top: this.canvas.offsetTop + this.canvas.offsetParent.offsetTop,
       },
     });
+
     this.canvas.addEventListener("mousemove", this.onMousemove);
     this.canvas.addEventListener("mouseup", this.onupBoxRect);
   }
@@ -115,7 +119,6 @@ class CanvasEditor {
     }
     store.dispatch({ type: actiontype.LINEPOSITION, payload: lines });
     store.dispatch({ type: actiontype.BORDER, payload: this.info });
-    // this.onDrawRact(this.info);
     this.drawLine(lines);
   }
 
@@ -139,13 +142,11 @@ class CanvasEditor {
     }
     this.info.width = width;
     this.info.height = height;
-    // this.onDrawRact(this.info);
     this.drawLine([...lines]);
   }
 
   drawLine(lines) {
-    // const { this.info } = store.getState();
-    // // const this.info = this.info;
+    const { offset } = store.getState();
     this.onDrawRact(this.info);
     this.ctx.strokeStyle = "blue";
     for (let i = 0; i < lines.length; i++) {
@@ -154,10 +155,16 @@ class CanvasEditor {
         this.ctx.strokeStyle = "red";
       }
       const [w, t, b, cx] = lines[i];
-      let newX = w + cx - this.info.x - this.info.width / 2;
-      if (newX < this.info.x) newX = this.info.x;
-      if (newX > this.info.x + this.info.width)
-        newX = this.info.x + this.info.width;
+      let newX =
+        w +
+        cx -
+        this.info.x -
+        this.info.width / 2 +
+        this.parentLeft / 2 -
+        offset.left;
+      if (newX < this.info.x - offset.left) newX = this.info.x - offset.left;
+      if (newX > this.info.x + this.info.width - offset.left)
+        newX = this.info.x + this.info.width - offset.left;
       this.ctx.moveTo(newX, t);
       this.ctx.lineTo(newX, b);
       this.ctx.stroke();
@@ -171,8 +178,8 @@ class CanvasEditor {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.onFillImage(this.img);
     this.ctx.strokeRect(
-      x - this.canvas.offsetLeft,
-      y - this.canvas.offsetTop,
+      x - this.canvas.offsetLeft - this.canvas.offsetParent.offsetLeft,
+      y - this.canvas.offsetTop - this.canvas.offsetParent.offsetTop,
       width,
       height
     );

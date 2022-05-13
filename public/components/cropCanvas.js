@@ -1,13 +1,16 @@
 import { store } from "../store.js";
 class CropCanvas {
-  constructor(id, scale) {
+  constructor(id, { width, height }) {
     this.canvas = document.querySelector(id);
 
-    this.baseScale = scale;
+    // this.baseScale = scale;
     this.ctx = this.canvas.getContext("2d");
+    this.canvas.width = width;
+    this.canvas.height = height;
   }
   draw() {
     store.subscribe(() => {
+      if (!store.getState()) return;
       const { mode } = store.getState();
       if (mode === "none") return;
       this.drawLine();
@@ -16,8 +19,11 @@ class CropCanvas {
 
   saveImage(img) {
     this.img = img;
-    this.canvas.width = document.body.clientWidth;
-    this.canvas.height = document.body.clientHeight;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // this.canvas.width = img.width * this.baseScale;
+    // this.canvas.height = img.height * this.baseScale;
+    // this.canvas.width = document.body.clientWidth;
+    // this.canvas.height = document.body.clientHeight;
   }
 
   drawLine() {

@@ -262,14 +262,14 @@ app.get("/xlsx", (req, res) => {
     );
     XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
 
-    let i = 0;
-    while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
-      fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
-      i++;
-    }
+    // let i = 0;
+    // while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+    //   fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+    //   i++;
+    // }
   } catch (e) {
     console.log(e);
-    return res.json({ message: "엑셀파일이 열려있는지 확인하세요." });
+    return res.json({ message: "열려있는 엑셀파일이 닫고 시도하세요." });
   }
 
   res.json({ message: "성공" });
