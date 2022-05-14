@@ -11,14 +11,10 @@ class ImageForm {
     this.onSubmit = this.onSubmit.bind(this);
 
     this.input.addEventListener("change", this.onThumbnail);
-    this.input.addEventListener("click", () => {
-      // store.dispatch({ action: actiontype.INITSTATE });
-    });
     this.el.addEventListener("submit", this.onSubmit);
   }
 
   onThumbnail(e) {
-    console.log(3);
     store.dispatch({ action: actiontype.INITSTATE });
 
     const reader = new FileReader();

@@ -8,6 +8,12 @@ body {
   margin: auto; */
 }
 
+.app {
+  position: relative;
+  margin: auto;
+  width: 1200px;
+}
+
 #division-view > p {
   text-align: center;
 }
@@ -63,10 +69,15 @@ body {
   margin-right: 10px;
 }
 
+.convert__container {
+  display: flex;
+}
+
+/* 에디터 ----- */
 .image__editer {
-  position: fixed;
-  top: 0;
-  right: 0;
+  /* position: fixed; */
+  /* top: 40px; */
+  /* right: 40px; */
   background-color: beige;
   width: 380px;
   height: 380px;
@@ -98,7 +109,7 @@ body {
 }
 
 #canvas {
-  width: 100%;
+  /* width: 100%; */
 }
 
 #crop__canvas {
@@ -107,4 +118,15 @@ body {
 
 #image-view {
   margin-left: 10px;
+}
+
+@media screen and (min-width: 1200px) {
+  /* .editer__container {
+    position: sticky;
+    top: 0;
+    right: 0;
+    background-color: beige;
+    width: 380px;
+    height: 380px;
+  } */
 }
