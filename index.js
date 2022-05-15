@@ -170,7 +170,6 @@ app.get("/extract", async (req, res) => {
     for (let i = 0; i < values.length; i++) {
       const [result] = values[i];
       const t = { arr: [] };
-      // console.log(result);
       if (!result.fullTextAnnotation) continue;
       const { text } = result.fullTextAnnotation;
       writePromises.push(
@@ -235,16 +234,12 @@ app.get("/xlsx", (req, res) => {
 
     const datas = [];
 
-    let i = 0;
     while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
       const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
         encoding: "utf8",
         flag: "r",
       });
       datas.push(JSON.parse(data).text.split("\n"));
-      console.log(JSON.parse(data).text.split("\n"));
-      // fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
-      i++;
     }
 
     const lengths = datas.map((d) => d.length);
@@ -258,9 +253,6 @@ app.get("/xlsx", (req, res) => {
         sheet[j][i] = datas[i][j] = datas[i][j].replace(/\d/g, "").trim();
       }
     }
-
-    // console.log(sheet);
-    // console.log(datas);
 
     var workbook = XLSX.readFile(__dirname + "/datas/output/새벽토건.xlsx");
     var worksheet = workbook.Sheets["출력"];
@@ -276,41 +268,31 @@ app.get("/xlsx", (req, res) => {
       raw: false,
       range: "Q1:U" + range,
     });
+
     var arrays = aoa.concat(aoa2).filter((arr) => arr.length);
-    // console.log(arrays[0]);
     const filterDatas = [];
     const rest = [];
     datas.flat().forEach((data) => {
-      console.log(data);
       const find = arrays.find((a) => a[0] === data);
       if (find) {
         filterDatas.push(find);
       } else {
-        rest.push([data]);
+        filterDatas.push([data]);
       }
     });
-    // console.log(aaa);
-    // console.log(aaa[1]);
-    // console.log(aaa[1][0]);
-    // console.log(aaa[1][1]);
-    // console.log(aaa[1][2]);
-    // console.log(aaa[1][3]);
-    // console.log(aaa[1][4]);
-    // console.log(aaa[1][5]);
-    // console.log(aaa[1]);
-    const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
-    const worksheet2 = XLSX.utils.aoa_to_sheet(rest);
-    worksheet = XLSX.utils.sheet_add_aoa(worksheet, [filterDatas[1]]);
 
-    XLSX.utils.book_append_sheet(workbook, worksheet1, "비교군 정보");
-    XLSX.utils.book_append_sheet(workbook, worksheet2, "누락자이름");
+    console.log(filterDatas);
+
+    const worksheet2 = XLSX.utils.aoa_to_sheet(filterDatas);
+
+    XLSX.utils.book_append_sheet(workbook, worksheet2, "비교완료");
     XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
 
-    // let i = 0;
-    // while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
-    //   fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
-    //   i++;
-    // }
+    let i = 0;
+    while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+      fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+      i++;
+    }
   } catch (e) {
     console.log(e);
     return res.json({ message: "열려있는 엑셀파일이 닫고 시도하세요." });
@@ -318,62 +300,5 @@ app.get("/xlsx", (req, res) => {
 
   res.json({ message: "성공" });
 });
-
-// app.get("/xlsx", (req, res) => {
-//   if (!fs.existsSync(__dirname + "/datas/output"))
-//     fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
-
-//   const datas = [];
-
-//   let i = 0;
-//   while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
-//     const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
-//       encoding: "utf8",
-//       flag: "r",
-//     });
-//     datas.push(JSON.parse(data).text.split("\n"));
-//     // fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
-//     i++;
-//   }
-
-//   const lengths = datas.map((d) => d.length);
-//   const maxRow = Math.max(...lengths);
-
-//   const sheet = [];
-//   for (let i = 0; i < maxRow; i++) sheet.push([]);
-
-//   for (let i = 0; i < datas.length; i++) {
-//     for (let j = 0; j < datas[i].length; j++) {
-//       sheet[j][i] = datas[i][j].replace(/\d/g, "").trim();
-//     }
-//   }
-
-//   // console.log(sheet);
-//   try {
-//     let workbook = XLSX.utils.book_new();
-//     if (fs.existsSync(__dirname + "/datas/output/create.xlsx")) {
-//       workbook = XLSX.readFile(__dirname + "/datas/output/create.xlsx");
-//     }
-//     const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
-
-//     XLSX.utils.book_append_sheet(
-//       workbook,
-//       worksheet1,
-//       "이름" + new Date().getTime()
-//     );
-//     XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
-
-//     // let i = 0;
-//     // while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
-//     //   fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
-//     //   i++;
-//     // }
-//   } catch (e) {
-//     console.log(e);
-//     return res.json({ message: "열려있는 엑셀파일이 닫고 시도하세요." });
-//   }
-
-//   res.json({ message: "성공" });
-// });
 
 app.listen("8000", () => console.log("listen port 8000"));
