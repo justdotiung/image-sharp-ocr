@@ -32,13 +32,13 @@ class CanvasEditor {
       case "crop":
         return this.crop(event);
       case "addLine":
-        return this.add();
+        return this.add(event);
       case "removeLine":
         return this.remove(event);
       case "move":
-        return this.move();
+        return this.move(event);
       case "resize":
-        return this.resize();
+        return this.resize(event);
       default:
         throw Error("선택모드없음");
     }
@@ -99,7 +99,16 @@ class CanvasEditor {
     this.canvas.addEventListener("mouseup", this.onupBoxRect);
   }
 
-  add() {
+  add(e) {
+    const { lines } = store.getState();
+
+    const index = lines.findIndex(
+      ([w, t, b, cx, numberOfDivisions]) =>
+        e.clientX + 10 > cx && e.clientX - 10 < cx
+    );
+    console.log(index);
+    this.currIndex = index;
+
     this.canvas.addEventListener("mousemove", this.onLineMove);
     this.canvas.addEventListener("mouseup", this.onupLineMove);
   }
@@ -133,11 +142,12 @@ class CanvasEditor {
   }
 
   onLineMove(e) {
+    if (this.currIndex < 0) return;
     const { lines } = store.getState();
-    const curr = lines[lines.length - 1];
+    const curr = lines[this.currIndex];
     curr.splice(3, 1, e.clientX);
     const newLine = [...curr];
-    lines.splice(lines.length - 1, 1, newLine);
+    lines.splice(this.currIndex, 1, newLine);
     this.drawLine([...lines]);
     store.dispatch({ type: actiontype.LINEPOSITION, payload: lines });
   }
@@ -161,14 +171,16 @@ class CanvasEditor {
     this.ctx.strokeStyle = "blue";
     for (let i = 0; i < lines.length; i++) {
       this.ctx.beginPath();
-      if (i === lines.length - 1) {
-        this.ctx.strokeStyle = "red";
-      }
-      const [w, t, b, cx] = lines[i];
-      let newX = w + cx - this.info.x - this.info.width / 2 - offset.left;
-      if (newX < this.info.x - offset.left) newX = this.info.x - offset.left;
-      if (newX > this.info.x + this.info.width - offset.left)
-        newX = this.info.x + this.info.width - offset.left;
+      // if (i === lines.length - 1) {
+      //   this.ctx.strokeStyle = "red";
+      // }
+      const [w, t, b, cx, numberOfDivisions] = lines[i];
+      const newX =
+        w +
+        cx -
+        this.info.x -
+        this.info.width / numberOfDivisions -
+        offset.left;
 
       this.ctx.moveTo(newX, t);
       this.ctx.lineTo(newX, b);

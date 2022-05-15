@@ -3,6 +3,7 @@ import { actiontype, store } from "../store.js";
 class Editor {
   constructor(id, canvasEditor) {
     this.el = document.querySelector(id);
+    this.input = this.el.querySelector(".line__input");
     this.crop = this.el.querySelector(".crop__button");
     this.resize = this.el.querySelector(".resize__button");
     this.add = this.el.querySelector(".line__button--add");
@@ -32,14 +33,22 @@ class Editor {
       }
       const { offset, imageRect } = store.getState();
       const { x, y, width, height } = imageRect;
-      store.dispatch({
-        type: actiontype.ADDLINE,
-        payload: [
-          x + width / 2,
+      const newlines = [];
+      const c = parseInt(this.input.value);
+      const numberOfDivisions = parseInt(this.input.value) + 1;
+      const distance = width / numberOfDivisions;
+      for (let i = 1; i < numberOfDivisions; i++) {
+        newlines.push([
+          x + distance,
           y - offset.top,
           y + height - offset.top,
-          x + width / 2,
-        ],
+          x + distance * i,
+          numberOfDivisions,
+        ]);
+      }
+      store.dispatch({
+        type: actiontype.ADDLINE,
+        payload: newlines,
       });
       store.dispatch({ type: actiontype.MODE, payload: "addLine" });
       const { lines } = store.getState();
@@ -66,8 +75,17 @@ class Editor {
       store.dispatch({ type: actiontype.MODE, payload: "move" });
     });
 
+    this.input.addEventListener("change", (e) => {
+      const { value } = e.target;
+      if (value < 1) {
+        e.target.value = 1;
+        return;
+      }
+    });
+
     this.show(false);
   }
+
   show(b = true) {
     this.el.style.display = b ? "block" : "none";
   }

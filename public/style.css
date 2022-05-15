@@ -2,14 +2,9 @@
   margin: 0;
   padding: 0;
 }
-body {
-  /* position: relative; */
-  /* width: 1200px;
-  margin: auto; */
-}
 
 .app {
-  position: relative;
+  /* position: relative; */
   margin: auto;
   width: 1200px;
 }
@@ -75,12 +70,12 @@ body {
 
 /* 에디터 ----- */
 .image__editer {
-  /* position: fixed; */
-  /* top: 40px; */
-  /* right: 40px; */
+  position: fixed;
+  top: 0;
+  right: 0;
   background-color: beige;
   width: 380px;
-  height: 380px;
+  height: 150px;
 }
 
 .image__text {
@@ -101,7 +96,7 @@ body {
   flex-direction: column;
   justify-items: center;
   align-items: center;
-  margin: 1rem;
+  /* margin: 1rem; */
 }
 
 #edit__button {
@@ -118,15 +113,4 @@ body {
 
 #image-view {
   margin-left: 10px;
-}
-
-@media screen and (min-width: 1200px) {
-  /* .editer__container {
-    position: sticky;
-    top: 0;
-    right: 0;
-    background-color: beige;
-    width: 380px;
-    height: 380px;
-  } */
 }

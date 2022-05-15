@@ -126,7 +126,8 @@ app.post("/upload", upload.single("file"), (req, res) => {
       })
       .catch((err) => {
         console.log("여기서 잘못된다.");
-        return res.json({ message: "err" });
+        console.log(err);
+        return res.json({ message: JSON.stringify(err) });
       });
   });
 });
@@ -149,53 +150,62 @@ app.get("/image/:id", (req, res) => {
 app.get("/extract", async (req, res) => {
   if (!SLICE_IMAGE_PATHS.length)
     return res.json({ message: "먼저 이미지를 잘라주세요." });
-  const isDirectory = fs.existsSync(__dirname + "/datas/ocr");
-  if (!isDirectory) {
-    fs.mkdirSync(__dirname + "/datas/ocr", { recursive: true });
-  }
-  const promises = [];
-  const writePromises = [];
-  const client = new vision.ImageAnnotatorClient();
+  console.log(SLICE_IMAGE_PATHS);
 
-  for (const { path } of SLICE_IMAGE_PATHS) {
-    promises.push(client.textDetection(path));
-  }
+  try {
+    const isDirectory = fs.existsSync(__dirname + "/datas/ocr");
+    if (!isDirectory) {
+      fs.mkdirSync(__dirname + "/datas/ocr", { recursive: true });
+    }
+    const promises = [];
+    const writePromises = [];
+    const client = new vision.ImageAnnotatorClient();
 
-  const values = await Promise.all(promises);
+    for (const { path } of SLICE_IMAGE_PATHS) {
+      promises.push(client.textDetection(path));
+    }
 
-  for (let i = 0; i < values.length; i++) {
-    const [result] = values[i];
-    const t = { arr: [] };
-    const { text } = result.fullTextAnnotation;
-    writePromises.push(
-      fs.promises.writeFile(
-        __dirname + `/datas/ocr/text_${i}.json`,
-        JSON.stringify({ text })
-      )
+    const values = await Promise.all(promises);
+
+    for (let i = 0; i < values.length; i++) {
+      const [result] = values[i];
+      const t = { arr: [] };
+      // console.log(result);
+      if (!result.fullTextAnnotation) continue;
+      const { text } = result.fullTextAnnotation;
+      writePromises.push(
+        fs.promises.writeFile(
+          __dirname + `/datas/ocr/text_${i}.json`,
+          JSON.stringify({ text })
+        )
+      );
+    }
+
+    await Promise.all(writePromises);
+
+    const data = JSON.parse(
+      fs.readFileSync(__dirname + "/db/data.json", {
+        encoding: "utf8",
+        flag: "r",
+      })
     );
+    const newData = {
+      ...data,
+      mountAPIreqCount: data.mountAPIreqCount - SLICE_IMAGE_PATHS.length,
+    };
+    fs.writeFileSync(
+      __dirname + "/db/data.json",
+      JSON.stringify(newData, null, "  ")
+    );
+    SLICE_IMAGE_PATHS.splice(0, SLICE_IMAGE_PATHS.length);
+    res.status(200).json({
+      message: "추출되었습니다.",
+      mountAPIreqCount: newData.mountAPIreqCount,
+      isComplete: true,
+    });
+  } catch (e) {
+    res.json({ message: "실패", isComplete: true });
   }
-
-  await Promise.all(writePromises);
-
-  const data = JSON.parse(
-    fs.readFileSync(__dirname + "/db/data.json", {
-      encoding: "utf8",
-      flag: "r",
-    })
-  );
-  const newData = {
-    ...data,
-    mountAPIreqCount: data.mountAPIreqCount - SLICE_IMAGE_PATHS.length,
-  };
-  fs.writeFileSync(
-    __dirname + "/db/data.json",
-    JSON.stringify(newData, null, "  ")
-  );
-  SLICE_IMAGE_PATHS.splice(0, SLICE_IMAGE_PATHS.length);
-  res.status(200).json({
-    message: "추출되었습니다.",
-    mountAPIreqCount: newData.mountAPIreqCount,
-  });
 });
 
 app.get("/ocr", (req, res) => {
@@ -219,47 +229,81 @@ app.get("/ocr", (req, res) => {
 });
 
 app.get("/xlsx", (req, res) => {
-  if (!fs.existsSync(__dirname + "/datas/output"))
-    fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
-
-  const datas = [];
-
-  let i = 0;
-  while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
-    const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
-      encoding: "utf8",
-      flag: "r",
-    });
-    datas.push(JSON.parse(data).text.split("\n"));
-    // fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
-    i++;
-  }
-
-  const lengths = datas.map((d) => d.length);
-  const maxRow = Math.max(...lengths);
-
-  const sheet = [];
-  for (let i = 0; i < maxRow; i++) sheet.push([]);
-
-  for (let i = 0; i < datas.length; i++) {
-    for (let j = 0; j < datas[i].length; j++) {
-      sheet[j][i] = datas[i][j].replace(/\d/g, "").trim();
-    }
-  }
-
-  // console.log(sheet);
   try {
-    let workbook = XLSX.utils.book_new();
-    if (fs.existsSync(__dirname + "/datas/output/create.xlsx")) {
-      workbook = XLSX.readFile(__dirname + "/datas/output/create.xlsx");
-    }
-    const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
+    if (!fs.existsSync(__dirname + "/datas/output"))
+      fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
 
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet1,
-      "이름" + new Date().getTime()
-    );
+    const datas = [];
+
+    let i = 0;
+    while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+      const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
+        encoding: "utf8",
+        flag: "r",
+      });
+      datas.push(JSON.parse(data).text.split("\n"));
+      console.log(JSON.parse(data).text.split("\n"));
+      // fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+      i++;
+    }
+
+    const lengths = datas.map((d) => d.length);
+    const maxRow = Math.max(...lengths);
+
+    const sheet = [];
+    for (let i = 0; i < maxRow; i++) sheet.push([]);
+
+    for (let i = 0; i < datas.length; i++) {
+      for (let j = 0; j < datas[i].length; j++) {
+        sheet[j][i] = datas[i][j] = datas[i][j].replace(/\d/g, "").trim();
+      }
+    }
+
+    // console.log(sheet);
+    // console.log(datas);
+
+    var workbook = XLSX.readFile(__dirname + "/datas/output/새벽토건.xlsx");
+    var worksheet = workbook.Sheets["출력"];
+    var range = worksheet["!ref"].split(":")[1].replace(/[A-Z]/g, "");
+    var aoa = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      raw: false,
+      range: "I1:N" + range,
+    });
+
+    var aoa2 = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      raw: false,
+      range: "Q1:U" + range,
+    });
+    var arrays = aoa.concat(aoa2).filter((arr) => arr.length);
+    // console.log(arrays[0]);
+    const filterDatas = [];
+    const rest = [];
+    datas.flat().forEach((data) => {
+      console.log(data);
+      const find = arrays.find((a) => a[0] === data);
+      if (find) {
+        filterDatas.push(find);
+      } else {
+        rest.push([data]);
+      }
+    });
+    // console.log(aaa);
+    // console.log(aaa[1]);
+    // console.log(aaa[1][0]);
+    // console.log(aaa[1][1]);
+    // console.log(aaa[1][2]);
+    // console.log(aaa[1][3]);
+    // console.log(aaa[1][4]);
+    // console.log(aaa[1][5]);
+    // console.log(aaa[1]);
+    const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
+    const worksheet2 = XLSX.utils.aoa_to_sheet(rest);
+    worksheet = XLSX.utils.sheet_add_aoa(worksheet, [filterDatas[1]]);
+
+    XLSX.utils.book_append_sheet(workbook, worksheet1, "비교군 정보");
+    XLSX.utils.book_append_sheet(workbook, worksheet2, "누락자이름");
     XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
 
     // let i = 0;
@@ -274,5 +318,62 @@ app.get("/xlsx", (req, res) => {
 
   res.json({ message: "성공" });
 });
+
+// app.get("/xlsx", (req, res) => {
+//   if (!fs.existsSync(__dirname + "/datas/output"))
+//     fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
+
+//   const datas = [];
+
+//   let i = 0;
+//   while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+//     const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
+//       encoding: "utf8",
+//       flag: "r",
+//     });
+//     datas.push(JSON.parse(data).text.split("\n"));
+//     // fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+//     i++;
+//   }
+
+//   const lengths = datas.map((d) => d.length);
+//   const maxRow = Math.max(...lengths);
+
+//   const sheet = [];
+//   for (let i = 0; i < maxRow; i++) sheet.push([]);
+
+//   for (let i = 0; i < datas.length; i++) {
+//     for (let j = 0; j < datas[i].length; j++) {
+//       sheet[j][i] = datas[i][j].replace(/\d/g, "").trim();
+//     }
+//   }
+
+//   // console.log(sheet);
+//   try {
+//     let workbook = XLSX.utils.book_new();
+//     if (fs.existsSync(__dirname + "/datas/output/create.xlsx")) {
+//       workbook = XLSX.readFile(__dirname + "/datas/output/create.xlsx");
+//     }
+//     const worksheet1 = XLSX.utils.aoa_to_sheet(sheet);
+
+//     XLSX.utils.book_append_sheet(
+//       workbook,
+//       worksheet1,
+//       "이름" + new Date().getTime()
+//     );
+//     XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
+
+//     // let i = 0;
+//     // while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
+//     //   fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
+//     //   i++;
+//     // }
+//   } catch (e) {
+//     console.log(e);
+//     return res.json({ message: "열려있는 엑셀파일이 닫고 시도하세요." });
+//   }
+
+//   res.json({ message: "성공" });
+// });
 
 app.listen("8000", () => console.log("listen port 8000"));

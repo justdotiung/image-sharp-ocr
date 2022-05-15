@@ -39,6 +39,8 @@ class CropCanvas {
     const scaleY2 = this.canvas.height / dh;
     const minScale = Math.min(scaleX2, scaleY2);
 
+    // console.log(baseScale, maxScale, minScale);
+
     this.ctx.beginPath();
     this.ctx.strokeStyle = "red";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

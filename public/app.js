@@ -55,11 +55,13 @@ const imageFormView = new ImageForm("#image-form-view");
 const canvasEditor = new CanvasEditor("#canvas", 0.3);
 const convertModal = new ConvertModal();
 const editor = new Editor("#edit__button", canvasEditor);
-const cropCanvas = new CropCanvas("#crop__canvas", { width: 700, height: 500 });
+// const cropCanvas = new CropCanvas("#crop__canvas", { width: 700, height: 500 });
 
 const button = new Button(".button__text--extract");
 button.setEvent(async () => {
   try {
+    if (!button.isClick) return;
+    button.isClick = false;
     convertModal.show(true);
     const r = await fetch("/extract");
     const data = await r.json();
@@ -73,6 +75,7 @@ button.setEvent(async () => {
     convertModal.show(false);
     const span = document.querySelector(".ocr--text");
     span.textContent = `이번달 api 남은 호출횟수 ${data.mountAPIreqCount}회`;
+    button.isClick = data.isComplete;
   } catch (e) {
     console.log(e);
   }
@@ -97,7 +100,7 @@ imageFormView.on("@thumbnail", ({ detail }) => {
     console.log(img.width, img.height);
     editor.show();
     canvasEditor.saveImage(img);
-    cropCanvas.saveImage(img);
-    cropCanvas.draw();
+    // cropCanvas.saveImage(img);
+    // cropCanvas.draw();
   };
 });

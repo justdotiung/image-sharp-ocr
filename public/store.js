@@ -57,7 +57,10 @@ const reducer = (state = initState, action) => {
   } else if (action.type === actiontype.INITSTATE) {
     return initState;
   } else if (action.type === actiontype.ADDLINE) {
-    const lines = [...state.lines, action.payload];
+    let newLine = action.payload;
+    const stx = state.lines.map((line) => line[3]);
+    newLine = newLine.filter((line) => !stx.includes(line[3]));
+    const lines = [...state.lines, ...newLine];
     return { ...state, lines };
   } else if (action.type === actiontype.LINEPOSITION) {
     const lines = action.payload;
