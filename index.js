@@ -31,6 +31,7 @@ if (!isdbData) {
 }
 
 const SLICE_IMAGE_PATHS = [];
+const FILENAME = { name: "" };
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -50,6 +51,9 @@ app.post("/upload", upload.single("file"), (req, res) => {
     fs.unlinkSync(__dirname + `/images/slice${i}.png`);
     i++;
   }
+  console.log(req.file.originalname.split(".")[0]);
+
+  FILENAME.name = req.file.originalname.split(".")[0];
   SLICE_IMAGE_PATHS.splice(0, SLICE_IMAGE_PATHS.length);
 
   const { imageRect, scale, offset, lines } = JSON.parse(req.body.rest);
@@ -150,7 +154,7 @@ app.get("/image/:id", (req, res) => {
 app.get("/extract", async (req, res) => {
   if (!SLICE_IMAGE_PATHS.length)
     return res.json({ message: "먼저 이미지를 잘라주세요." });
-  console.log(SLICE_IMAGE_PATHS);
+  // console.log(SLICE_IMAGE_PATHS);
 
   try {
     const isDirectory = fs.existsSync(__dirname + "/datas/ocr");
@@ -233,13 +237,14 @@ app.get("/xlsx", (req, res) => {
       fs.mkdirSync(__dirname + "/datas/output", { recursive: true });
 
     const datas = [];
-
+    let i = 0;
     while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
       const data = fs.readFileSync(__dirname + `/datas/ocr/text_${i}.json`, {
         encoding: "utf8",
         flag: "r",
       });
       datas.push(JSON.parse(data).text.split("\n"));
+      i++;
     }
 
     const lengths = datas.map((d) => d.length);
@@ -250,28 +255,42 @@ app.get("/xlsx", (req, res) => {
 
     for (let i = 0; i < datas.length; i++) {
       for (let j = 0; j < datas[i].length; j++) {
-        sheet[j][i] = datas[i][j] = datas[i][j].replace(/\d/g, "").trim();
+        sheet[j][i] = datas[i][j] = datas[i][j]
+          .replace(/\d/g, "")
+          .replace(/\(.*\)/g, "")
+          .replace(/[^가-힣]/g, "")
+          .trim();
       }
     }
 
-    var workbook = XLSX.readFile(__dirname + "/datas/output/새벽토건.xlsx");
+    var workbook = XLSX.readFile(
+      __dirname + "/datas/output/새벽토건 220513.xlsx"
+    );
     var worksheet = workbook.Sheets["출력"];
     var range = worksheet["!ref"].split(":")[1].replace(/[A-Z]/g, "");
     var aoa = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,
       raw: false,
-      range: "I1:N" + range,
+      range: "I1:J" + range,
     });
 
     var aoa2 = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,
       raw: false,
-      range: "Q1:U" + range,
+      range: "Q1:R" + range,
     });
 
-    var arrays = aoa.concat(aoa2).filter((arr) => arr.length);
+    var aoa3 = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      raw: false,
+      range: "X1:Y" + range,
+    });
+
+    var arrays = aoa
+      .concat(aoa2)
+      .concat(aoa3)
+      .filter((arr) => arr.length);
     const filterDatas = [];
-    const rest = [];
     datas.flat().forEach((data) => {
       const find = arrays.find((a) => a[0] === data);
       if (find) {
@@ -281,14 +300,24 @@ app.get("/xlsx", (req, res) => {
       }
     });
 
-    console.log(filterDatas);
+    const initsheet = [];
+    const init = ["", "", "", "", ""];
+    for (let i = 0; i < parseInt(range); i++) {
+      initsheet.push(init);
+    }
+
+    console.log(FILENAME);
 
     const worksheet2 = XLSX.utils.aoa_to_sheet(filterDatas);
-
     XLSX.utils.book_append_sheet(workbook, worksheet2, "비교완료");
-    XLSX.writeFile(workbook, __dirname + "/datas/output/create.xlsx");
+    XLSX.utils.sheet_add_aoa(worksheet, initsheet, { origin: "C5" });
+    XLSX.utils.sheet_add_aoa(worksheet, filterDatas, { origin: "C5" });
+    XLSX.writeFile(
+      workbook,
+      __dirname + `/datas/output/새벽토건 ${FILENAME.name}.xlsx`
+    );
 
-    let i = 0;
+    i = 0;
     while (fs.existsSync(__dirname + `/datas/ocr/text_${i}.json`)) {
       fs.unlinkSync(__dirname + `/datas/ocr/text_${i}.json`);
       i++;
