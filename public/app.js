@@ -4,7 +4,6 @@ import Button from "./components/button.js";
 import { actiontype, store } from "./store.js";
 import ConvertModal from "./components/modal.js";
 import Editor from "./components/editor.js";
-import CropCanvas from "./components/cropCanvas.js";
 
 (() => {
   fetch("/ocr")
@@ -32,7 +31,12 @@ export const imageRender = (() => {
       if (isUpload) {
         let text = "";
         for (let i = 0; i < ids; i++) {
-          text += `<img class="sharp-image" src="/image/${i}" alt="image" />`;
+          text += `
+          <div style="display:flex; margin: 0 10px 10px 0;">
+          <img class="sharp-image" src="/image/${i}" alt="image" />
+          <div class="sharp-box sharp-data">
+          </div>
+          </div>`;
         }
 
         div.innerHTML = text;
@@ -45,6 +49,25 @@ export const imageRender = (() => {
     },
     setIds(n) {
       ids = n;
+    },
+    appends(datas) {
+      const lists = div.querySelectorAll(".sharp-data");
+      [...lists].forEach((el, i) => {
+        datas[i].forEach((data) => {
+          const div = document.createElement("div");
+          const input = document.createElement("input");
+          const button = document.createElement("button");
+          button.textContent = "삭제";
+          input.value = data;
+          div.appendChild(input);
+          div.appendChild(button);
+          el.appendChild(div);
+
+          button.addEventListener("click", (e) => {
+            el.removeChild(div);
+          });
+        });
+      });
     },
   };
 })();
@@ -63,7 +86,7 @@ button.setEvent(async () => {
     if (!button.isClick) return;
     button.isClick = false;
     convertModal.show(true);
-    const r = await fetch("/extract");
+    const r = await fetch("/google-api/extract");
     const data = await r.json();
     if (data.mountAPIreqCount) {
       store.dispatch({
@@ -72,10 +95,12 @@ button.setEvent(async () => {
       });
     }
     alert(data.message);
+    console.log(data);
     convertModal.show(false);
     const span = document.querySelector(".ocr--text");
     span.textContent = `이번달 api 남은 호출횟수 ${data.mountAPIreqCount}회`;
     button.isClick = data.isComplete;
+    if (data.ocrDatas) imageRender.appends(data.ocrDatas);
   } catch (e) {
     console.log(e);
   }
@@ -85,7 +110,29 @@ const xlsxButton = new Button(".buuton__cor--convert");
 xlsxButton.setEvent(async () => {
   try {
     convertModal.show(true);
-    const res = await fetch("/xlsx");
+
+    // const formData = new FormData();
+    const lists = document.querySelectorAll(".sharp-data");
+    const names = [];
+    [...lists].forEach((el, i) => {
+      const name = [];
+      names.push(name);
+      const inputs = el.querySelectorAll("input");
+      [...inputs].forEach((input) => name.push(input.value));
+    });
+
+    // formData.append("names", JSON.stringify({ a: 1 }));
+    // console.log(formData.get("names"));
+    // var req = new XMLHttpRequest();
+    // req.open("POST", "/xlsx");
+    // req.send(formData);
+    const res = await fetch("/xlsx", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ names }),
+    });
     const data = await res.json();
     alert(data.message);
     convertModal.show(false);

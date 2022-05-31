@@ -47,7 +47,7 @@ class ImageForm {
     // req.open("POST", "/upload");
     // req.send(data);
 
-    fetch("/upload", {
+    fetch("image/upload", {
       method: "POST",
       body: data,
     })

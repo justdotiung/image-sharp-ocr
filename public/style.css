@@ -113,4 +113,11 @@
 
 #image-view {
   margin-left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.sharp-box {
+  background-color: aqua;
+  width: 100px;
 }
